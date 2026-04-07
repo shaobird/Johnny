@@ -1,0 +1,18 @@
+{
+  "user": {
+    "name": "Boss",
+    "timezone": "Asia/Singapore",
+    "forex_pairs_watched": ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "NZD", "CHF"],
+    "fitness_goals": {
+      "cardio": "Run at least 3 times per week, build towards 10km",
+      "strength": "Progressive overload — increase weight or reps each session",
+      "rest": "At least 1 full rest day per week, no two hard sessions back-to-back"
+    },
+    "work_style": "Prefer meetings in the morning, deep work in the afternoon"
+  },
+  "fitness_baselines": {
+    "note": "Johnny will populate this automatically as he sees your Strava and Hevy data"
+  },
+  "johnny_notes": [],
+  "last_updated": null
+}
