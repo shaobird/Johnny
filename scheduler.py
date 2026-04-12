@@ -1,32 +1,51 @@
 """
-Scheduler — fires Johnny's morning briefing at the time set in BRIEFING_TIME.
-Uses APScheduler with the asyncio backend so it plays nicely with the
-python-telegram-bot event loop.
+Scheduler — fires Johnny's daily jobs.
+
+Jobs:
+  1. Morning briefing (BRIEFING_TIME)       — calendar + fitness + forex events
+  2. Intel briefing   (INTEL_BRIEFING_TIME) — AI + construction + macro + HYROX news
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import Application
 
-from config import BRIEFING_TIME
+from config import BRIEFING_TIME, INTEL_BRIEFING_TIME
 
 
 def setup(app: Application) -> AsyncIOScheduler:
     """
-    Attach a cron job to `app` that sends the daily briefing.
-    Returns the scheduler (caller must call .start() and later .shutdown()).
+    Register all scheduled jobs and return the scheduler.
+    Caller must call scheduler.start() and later scheduler.shutdown().
     """
-    from telegram_bot import push_briefing  # avoid circular import at module level
+    # Avoid circular imports — telegram_bot imports johnny which imports agents
+    from telegram_bot import push_briefing, push_intel
 
-    hour, minute = BRIEFING_TIME.split(":")
     scheduler = AsyncIOScheduler()
+
+    # ── Job 1: Morning briefing (calendar + fitness + forex) ──────────────────
+    b_hour, b_min = BRIEFING_TIME.split(":")
     scheduler.add_job(
         push_briefing,
         trigger="cron",
-        hour=int(hour),
-        minute=int(minute),
+        hour=int(b_hour),
+        minute=int(b_min),
         args=[app],
         id="daily_briefing",
         replace_existing=True,
-        misfire_grace_time=300,  # allow up to 5 min late if the process was sleeping
+        misfire_grace_time=300,
     )
+
+    # ── Job 2: Intel briefing (AI + construction + macro + HYROX) ─────────────
+    i_hour, i_min = INTEL_BRIEFING_TIME.split(":")
+    scheduler.add_job(
+        push_intel,
+        trigger="cron",
+        hour=int(i_hour),
+        minute=int(i_min),
+        args=[app],
+        id="daily_intel",
+        replace_existing=True,
+        misfire_grace_time=300,
+    )
+
     return scheduler

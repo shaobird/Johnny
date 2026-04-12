@@ -23,3 +23,7 @@ HEVY_API_KEY = os.getenv("HEVY_API_KEY")
 
 # Scheduler — 24h format, e.g. "07:00"
 BRIEFING_TIME = os.getenv("BRIEFING_TIME", "07:00")
+
+# Intel briefing — runs daily at a separate time (web searches take longer)
+# Recommend sending 30–60 min after the morning briefing
+INTEL_BRIEFING_TIME = os.getenv("INTEL_BRIEFING_TIME", "07:30")

@@ -7,6 +7,7 @@ Commands:
   /calendar — today's meetings only
   /fitness  — fitness summary only
   /news     — Forex Factory high-impact events only
+  /intel    — daily intelligence briefing (AI, construction, forex, HYROX)
 
 Any other text is forwarded to Johnny as a freeform message.
 
@@ -30,6 +31,7 @@ import johnny
 from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
+from agents.intel import get_intel_briefing
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
@@ -49,7 +51,8 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "  /briefing — full daily briefing\n"
         "  /calendar — today's meetings\n"
         "  /fitness  — workout summary\n"
-        "  /news     — Forex high-impact events\n\n"
+        "  /news     — Forex high-impact events\n"
+        "  /intel    — daily intelligence briefing\n\n"
         "Or just talk to me normally."
     )
 
@@ -68,6 +71,14 @@ async def cmd_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def cmd_fitness(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("💪 Fetching fitness data…")
     await _send_long(update, get_fitness_summary())
+
+
+async def cmd_intel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "📡 Running intel search across AI, construction, forex & HYROX…\n"
+        "This takes 1–2 minutes ⏳"
+    )
+    await _send_long(update, get_intel_briefing())
 
 
 async def cmd_news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -107,6 +118,20 @@ async def push_briefing(app: Application) -> None:
         print("TELEGRAM_CHAT_ID not set — skipping scheduled briefing.")
         return
     text = johnny.daily_briefing()
+    await _push(app, text)
+
+
+async def push_intel(app: Application) -> None:
+    """Called by the scheduler to send the daily intel briefing."""
+    if not TELEGRAM_CHAT_ID:
+        print("TELEGRAM_CHAT_ID not set — skipping intel briefing.")
+        return
+    text = get_intel_briefing()
+    await _push(app, text)
+
+
+async def _push(app: Application, text: str) -> None:
+    """Send a (potentially long) message to the owner's chat."""
     limit = 4096
     for i in range(0, len(text), limit):
         await app.bot.send_message(chat_id=int(TELEGRAM_CHAT_ID), text=text[i : i + limit])
@@ -121,5 +146,6 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("calendar", cmd_calendar))
     app.add_handler(CommandHandler("fitness", cmd_fitness))
     app.add_handler(CommandHandler("news", cmd_news))
+    app.add_handler(CommandHandler("intel", cmd_intel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     return app

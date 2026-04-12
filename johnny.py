@@ -12,6 +12,7 @@ import anthropic
 from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
+from agents.intel import get_intel_briefing
 import memory as mem
 from config import ANTHROPIC_API_KEY
 
@@ -94,6 +95,17 @@ _TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
+        "name": "get_intel_briefing",
+        "description": (
+            "Run a live web search and generate a daily intelligence briefing "
+            "across 4 domains: AI & automation, construction industry, "
+            "forex & macro markets, and HYROX / endurance sport. "
+            "Each item includes a 'why it matters for you' analysis. "
+            "Ends with 3 actionable signals for today. Takes 1–2 minutes to run."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
         "name": "save_note",
         "description": (
             "Save a note to Johnny's persistent memory. Use this to record patterns, "
@@ -113,10 +125,11 @@ _TOOLS = [
 ]
 
 _HANDLERS = {
-    "check_calendar": lambda _: get_todays_events(),
-    "check_fitness":  lambda _: get_fitness_summary(),
-    "get_forex_news": lambda _: get_high_impact_news(),
-    "save_note":      lambda inp: mem.add_note(inp["note"]),
+    "check_calendar":    lambda _: get_todays_events(),
+    "check_fitness":     lambda _: get_fitness_summary(),
+    "get_forex_news":    lambda _: get_high_impact_news(),
+    "get_intel_briefing": lambda _: get_intel_briefing(),
+    "save_note":         lambda inp: mem.add_note(inp["note"]),
 }
 
 
