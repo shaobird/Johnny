@@ -46,25 +46,61 @@ def get_fitness_summary() -> str:
     if "unavailable" in strava.lower() and "unavailable" in hevy.lower():
         return "Fitness data unavailable — check Strava and Hevy credentials."
 
-    prompt = f"""You are a fitness coach assistant. Analyse the data below and give a concise summary (max 5 bullet points) covering:
-- What the user has been doing
-- Any noticeable trends or improvements
-- One actionable recommendation for today
+    today = datetime.now().strftime("%A")  # e.g. "Monday"
+    prompt = f"""You are an expert hybrid fitness coach. Analyse the data below against the user's specific program.
 
-Strava (cardio / runs / rides):
+━━━ THE USER'S PROGRAM ━━━
+Hybrid athlete: PPL strength (3x/week) + 3 runs/week
+Goals: Half marathon + HYROX
+
+Weekly schedule:
+  MON — Push (upper body, can push hard)
+  TUE — Easy Run Zone 2 (5–7km, HR 130–145 bpm, ~6:20–6:40/km)
+  WED — Pull (upper body, can push hard)
+  THU — Tempo Run (1km easy + 3–4km tempo + cooldown)
+  FRI — Legs (runner-friendly, ALWAYS leave 2 reps in reserve)
+  SAT — Intervals (400m or 800m repeats)
+  SUN — Long Run (8–12km, slow pace)
+
+Key rules:
+  • Legs = strength support, never train to failure
+  • Upper body can be pushed hard
+  • Leg day must not ruin Saturday intervals
+  • User also plays golf and trades forex in evenings — recovery matters
+
+Run baselines:
+  • Easy/Zone 2: ~6:20/km @ ~134 bpm (established baseline)
+  • Tempo: target ~5:20–5:35/km (to be established)
+  • Long run: slow, conversational pace
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Today is {today}.
+
+━━━ LAST 7 DAYS OF DATA ━━━
+Strava (runs):
 {strava}
 
-Hevy (strength training):
+Hevy (strength sessions):
 {hevy}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Keep it short and motivating. Use plain text, no markdown headers."""
+Respond with a concise analysis (max 6 bullet points) covering:
+1. Weekly compliance — did they hit 3 gym sessions and 3 runs? What's missing?
+2. Run quality — compare easy runs to 6:20/km baseline. Tempo pace vs target. Long run distance trend.
+3. Strength — are they hitting Push/Pull/Legs structure? Any session skipped?
+4. Recovery flags — back-to-back hard sessions? Legs too close to intervals?
+5. Today's priority — what should they focus on TODAY given the day of week?
+6. One specific recommendation to move toward half marathon / HYROX goals.
+
+Be direct and specific. No filler. Reference their actual data and paces."""
 
     response = _client.messages.create(
         model="claude-opus-4-6",
-        max_tokens=500,
+        max_tokens=700,
+        thinking={"type": "adaptive"},
         messages=[{"role": "user", "content": prompt}],
     )
-    return response.content[0].text
+    return next(b.text for b in response.content if b.type == "text")
 
 
 # ── Strava ────────────────────────────────────────────────────────────────────

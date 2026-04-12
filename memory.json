@@ -3,16 +3,99 @@
     "name": "Boss",
     "timezone": "Asia/Singapore",
     "forex_pairs_watched": ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "NZD", "CHF"],
-    "fitness_goals": {
-      "cardio": "Run at least 3 times per week, build towards 10km",
-      "strength": "Progressive overload — increase weight or reps each session",
-      "rest": "At least 1 full rest day per week, no two hard sessions back-to-back"
+    "lifestyle": {
+      "sport": "Golf (regular)",
+      "work": "Running a business",
+      "trading": "Forex trading in evenings",
+      "note": "Recovery bandwidth is limited — quality over volume always"
     },
-    "work_style": "Prefer meetings in the morning, deep work in the afternoon"
+    "fitness_goals": {
+      "primary": "Half marathon + HYROX",
+      "strength": "Progressive overload on upper body. Legs = strength support, NOT bodybuilding. Never train legs to failure.",
+      "running": "Build half marathon engine. Current aerobic base: ~6:20/km @ ~134 bpm (Zone 2).",
+      "hybrid": "Become a strong hybrid athlete — combine endurance and strength without sacrificing either"
+    },
+    "work_style": "Business during day, forex trading in evenings"
   },
-  "fitness_baselines": {
-    "note": "Johnny will populate this automatically as he sees your Strava and Hevy data"
+
+  "training_program": {
+    "name": "PPL + 3 Runs Hybrid",
+    "philosophy": "Push/Pull/Legs placed so leg day never ruins tempo or long runs. Upper body can push harder. Legs always leave 2 reps in reserve.",
+    "weekly_schedule": {
+      "MON": {
+        "type": "GYM",
+        "session": "Push — Upper Body",
+        "exercises": ["Bench press", "Incline DB press", "Shoulder press", "Triceps work", "Core"],
+        "notes": "Safe day — no interference with running. Can push hard."
+      },
+      "TUE": {
+        "type": "RUN",
+        "session": "Easy Run — Zone 2",
+        "distance_km": "5–7",
+        "target_hr_bpm": "130–145",
+        "target_pace": "Comfortable and controlled (around 6:20–6:40/km based on current fitness)",
+        "purpose": "Build aerobic base"
+      },
+      "WED": {
+        "type": "GYM",
+        "session": "Pull — Upper Body",
+        "exercises": ["Pull-ups / Lat pulldown", "Barbell rows", "Face pulls", "Biceps", "Rear delts"],
+        "notes": "Supports posture and running economy. Can push hard."
+      },
+      "THU": {
+        "type": "RUN",
+        "session": "Tempo Run",
+        "distance_km": "5–7 total",
+        "structure": "1km easy warmup → 3–4km at tempo pace → cooldown",
+        "purpose": "Improve race pace ability"
+      },
+      "FRI": {
+        "type": "GYM",
+        "session": "Legs — Runner-Friendly Strength",
+        "exercises": ["Squats OR leg press", "Romanian deadlift", "Walking lunges", "Hamstring curl", "Calf raises"],
+        "notes": "CRITICAL RULE: Leave 2 reps in reserve. Do not max out. Legs must be fresh enough for Saturday intervals."
+      },
+      "SAT": {
+        "type": "RUN",
+        "session": "Intervals",
+        "structure": "400m repeats OR 800m repeats",
+        "purpose": "Build speed and VO2 max",
+        "notes": "Keep existing interval session structure"
+      },
+      "SUN": {
+        "type": "RUN",
+        "session": "Long Run",
+        "distance_km": "8–12 (build progressively)",
+        "pace": "Slow and conversational",
+        "purpose": "Build half marathon engine"
+      }
+    },
+    "weekly_targets": {
+      "gym_sessions": 3,
+      "runs": 3,
+      "run_types_required": ["Zone 2 easy", "Tempo", "Intervals or Long run"]
+    },
+    "key_rules": [
+      "Leg day = strength support, NOT bodybuilding destruction",
+      "Never train legs to failure — always 2 reps in reserve",
+      "Upper body can be pushed harder",
+      "No heavy legs before tempo or interval runs",
+      "Leg day (FRI) is always 1 day before intervals (SAT) — keep volume moderate"
+    ]
   },
+
+  "run_baselines": {
+    "aerobic_easy": {
+      "pace_per_km": "6:20",
+      "heart_rate_bpm": 134,
+      "zone": "Zone 2",
+      "note": "Established baseline from recent runs"
+    }
+  },
+
+  "fitness_baselines": {},
+
   "johnny_notes": [],
+
   "last_updated": null
 }
