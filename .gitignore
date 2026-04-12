@@ -1,6 +1,9 @@
 # Secrets — never commit
 .env
 
+# Runtime logs
+*.log
+
 # Google OAuth tokens
 token.pickle
 credentials.json
