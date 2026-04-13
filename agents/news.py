@@ -55,7 +55,7 @@ def get_high_impact_news() -> str:
         if not events:
             return "No high-impact Forex events scheduled for today."
 
-        today_str = datetime.datetime.now().strftime("%a, %b %-d")
+        today_str = datetime.datetime.now().strftime("%a, %b %d").replace(" 0", " ")
         header = f"🔴 High-Impact Forex Events — {today_str}"
         lines = [header, ""]
         for e in events:
