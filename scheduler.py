@@ -2,8 +2,9 @@
 Scheduler — fires Johnny's daily jobs.
 
 Jobs:
-  1. Morning briefing (BRIEFING_TIME)       — calendar + fitness + forex events
-  2. Intel briefing   (INTEL_BRIEFING_TIME) — AI + construction + macro + HYROX news
+  1. Morning briefing  (BRIEFING_TIME)       — calendar + fitness + forex events
+  2. Intel briefing    (INTEL_BRIEFING_TIME) — AI + construction + macro + HYROX news
+  3. MrktEdge monitor  (every 10 min)        — HIGH IMPACT news alerts, instant push
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -18,7 +19,7 @@ def setup(app: Application) -> AsyncIOScheduler:
     Caller must call scheduler.start() and later scheduler.shutdown().
     """
     # Avoid circular imports — telegram_bot imports johnny which imports agents
-    from telegram_bot import push_briefing, push_intel
+    from telegram_bot import push_briefing, push_intel, push_mrktedge_alerts
 
     scheduler = AsyncIOScheduler()
 
@@ -46,6 +47,17 @@ def setup(app: Application) -> AsyncIOScheduler:
         id="daily_intel",
         replace_existing=True,
         misfire_grace_time=300,
+    )
+
+    # ── Job 3: MrktEdge HIGH IMPACT monitor (every 10 minutes) ────────────────
+    scheduler.add_job(
+        push_mrktedge_alerts,
+        trigger="interval",
+        minutes=10,
+        args=[app],
+        id="mrktedge_monitor",
+        replace_existing=True,
+        misfire_grace_time=60,
     )
 
     return scheduler

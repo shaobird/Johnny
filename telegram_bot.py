@@ -18,6 +18,8 @@ Setup:
      Copy that ID into TELEGRAM_CHAT_ID in .env so the scheduler can DM you.
 """
 
+import asyncio
+
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -32,6 +34,7 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
+from agents.mrktedge import check_new_items, format_item
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
@@ -128,6 +131,22 @@ async def push_intel(app: Application) -> None:
         return
     text = get_intel_briefing()
     await _push(app, text)
+
+
+async def push_mrktedge_alerts(app: Application) -> None:
+    """Called every 10 min — pushes any new HIGH IMPACT items instantly."""
+    if not TELEGRAM_CHAT_ID:
+        return
+    try:
+        new_items = await asyncio.to_thread(check_new_items)
+        for item in new_items:
+            await app.bot.send_message(
+                chat_id=int(TELEGRAM_CHAT_ID),
+                text=format_item(item),
+                parse_mode="Markdown",
+            )
+    except Exception as e:
+        print(f"[MrktEdge] Push failed: {e}")
 
 
 async def _push(app: Application, text: str) -> None:

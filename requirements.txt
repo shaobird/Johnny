@@ -16,5 +16,5 @@ beautifulsoup4>=4.12
 # Scheduler
 apscheduler>=3.10
 
-# Optional: only needed if Cloudflare blocks requests-based scraping
-# playwright>=1.40
+# Browser automation — required for MrktEdge login + scraping
+playwright>=1.40

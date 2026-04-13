@@ -4,6 +4,10 @@
 # Runtime logs
 *.log
 
+# MrktEdge runtime state — never commit
+mrktedge_cookies.json
+seen_mrktedge.json
+
 # Google OAuth tokens
 token.pickle
 credentials.json
