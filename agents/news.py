@@ -1,69 +1,51 @@
 """
 News Agent — Forex Factory Economic Calendar
-Scrapes today's HIGH-IMPACT events (red icon) from forexfactory.com/calendar.
+Fetches this week's HIGH-IMPACT events via Forex Factory's public XML feed.
 
-What gets scraped (matching what you see in the screenshot):
-  • Time        e.g. 8:30pm
-  • Currency    e.g. USD
-  • Event name  e.g. Core Durable Goods Orders m/m
-  • Forecast    e.g. 0.5%
-  • Previous    e.g. 0.3%
+Feed URL: https://nfs.faireconomy.media/ff_calendar_thisweek.xml
 
-Impact filter:
-  Red   (impact-red) = High   ← we include these
-  Orange (impact-ora) = Medium ← skipped by default (change INCLUDE_MEDIUM below)
-  Yellow (impact-yel) = Low   ← always skipped
+Filters:
+  - impact == "High" only
+  - today's date only
+  - major currency pairs only (USD, EUR, GBP, JPY, AUD, CAD, NZD, CHF)
 
-No login required — the public calendar is fully accessible.
-If Cloudflare blocks simple requests, install playwright and set USE_PLAYWRIGHT=true in .env.
+Times are converted from US Eastern (ET) to Asia/Singapore (SGT).
+No browser or Playwright required.
 """
 
-import asyncio
-import concurrent.futures
 import os
 import datetime
+import xml.etree.ElementTree as ET
+from zoneinfo import ZoneInfo
+
 import requests
-from bs4 import BeautifulSoup
 
-# Set to True in .env if the simple requests approach gets blocked
-USE_PLAYWRIGHT = os.getenv("FF_USE_PLAYWRIGHT", "false").lower() == "true"
-
-# Set to True to also include medium-impact (orange) events
+# Set to True to also include medium-impact events
 INCLUDE_MEDIUM = os.getenv("FF_INCLUDE_MEDIUM", "false").lower() == "true"
 
-CALENDAR_URL = "https://www.forexfactory.com/calendar"
+FEED_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
 
-_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Cache-Control": "max-age=0",
-}
+MAJOR_CURRENCIES = {"USD", "EUR", "GBP", "JPY", "AUD", "CAD", "NZD", "CHF"}
+
+ET_ZONE  = ZoneInfo("America/New_York")
+SGT_ZONE = ZoneInfo("Asia/Singapore")
 
 
 def get_high_impact_news() -> str:
     """Return today's high-impact Forex Factory events as a formatted string."""
     try:
-        html = _fetch_html()
-        events = _parse_events(html)
+        events = _fetch_and_parse()
 
         if not events:
             return "No high-impact Forex events scheduled for today."
 
-        today_str = datetime.datetime.now().strftime("%a, %b %d").replace(" 0", " ")
-        header = f"🔴 High-Impact Forex Events — {today_str}"
-        lines = [header, ""]
+        today_str = datetime.datetime.now(SGT_ZONE).strftime("%a, %b %d").replace(" 0", " ")
+        lines = [f"🔴 High-Impact Forex Events — {today_str}", ""]
+
         for e in events:
             forecast = f"  Forecast: {e['forecast']}" if e["forecast"] else ""
-            previous = f"  Prev: {e['previous']}" if e["previous"] else ""
-            lines.append(f"• {e['time']:>8}  [{e['currency']}]  {e['event']}")
+            previous = f"  Prev: {e['previous']}"   if e["previous"]  else ""
+            lines.append(f"• {e['time']:>8}  [{e['country']}]  {e['title']}")
             if forecast or previous:
                 lines.append(f"           {forecast}{previous}".rstrip())
 
@@ -73,158 +55,88 @@ def get_high_impact_news() -> str:
         return f"Forex Factory unavailable: {exc}"
 
 
-# ── HTML fetching ─────────────────────────────────────────────────────────────
+# ── Fetch + parse ─────────────────────────────────────────────────────────────
 
-def _fetch_html() -> str:
-    if USE_PLAYWRIGHT:
-        return _fetch_with_playwright()
-    return _fetch_with_requests()
-
-
-def _fetch_with_requests() -> str:
-    resp = requests.get(CALENDAR_URL, headers=_HEADERS, timeout=20)
+def _fetch_and_parse() -> list[dict]:
+    """Fetch the XML feed and return filtered today's high-impact events."""
+    resp = requests.get(FEED_URL, timeout=10)
     resp.raise_for_status()
-    return resp.text
 
+    root = ET.fromstring(resp.content)
+    today_sgt = datetime.datetime.now(SGT_ZONE).date()
+    events = []
 
-def _fetch_with_playwright() -> str:
-    """Fallback: use async Playwright in a thread to bypass Cloudflare.
-    Runs in a separate thread so it gets its own event loop — safe inside asyncio."""
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(_playwright_thread)
-        return future.result(timeout=60)
+    for event in root.findall("event"):
+        country  = (event.findtext("country") or "").strip()
+        title    = (event.findtext("title")   or "").strip()
+        impact   = (event.findtext("impact")  or "").strip()
+        date_str = (event.findtext("date")    or "").strip()
+        time_str = (event.findtext("time")    or "").strip()
+        forecast = (event.findtext("forecast") or "").strip()
+        previous = (event.findtext("previous") or "").strip()
 
-
-def _playwright_thread() -> str:
-    """Runs in a worker thread — creates its own event loop for async Playwright."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(_fetch_async_playwright())
-    finally:
-        loop.close()
-
-
-async def _fetch_async_playwright() -> str:
-    from playwright.async_api import async_playwright
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        await page.goto(CALENDAR_URL, wait_until="networkidle", timeout=30_000)
-        html = await page.content()
-        await browser.close()
-        return html
-
-
-# ── Parsing ───────────────────────────────────────────────────────────────────
-
-def _parse_events(html: str) -> list[dict]:
-    """
-    Parse the Forex Factory calendar table.
-
-    FF renders one date header row for each new day, then multiple event rows.
-    We track the current date as we walk rows and stop once we pass today.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-    table = soup.find("table", class_="calendar__table")
-    if not table:
-        return []
-
-    today = datetime.date.today()
-    current_date: datetime.date | None = None
-    events: list[dict] = []
-    last_time = ""
-
-    for row in table.find_all("tr", class_="calendar__row"):
-        # ── Date cell (only present on the first row of each new day) ──
-        date_cell = row.find("td", class_="calendar__date")
-        if date_cell and date_cell.get_text(strip=True):
-            parsed = _parse_ff_date(date_cell.get_text(strip=True))
-            if parsed:
-                current_date = parsed
-
-        # Stop processing once we pass today
-        if current_date and current_date > today:
-            break
-
-        # Only process today's rows
-        if current_date != today:
+        # Filter by currency
+        if country not in MAJOR_CURRENCIES:
             continue
 
-        # ── Impact ──
-        impact_span = row.find("td", class_="calendar__impact")
-        if not impact_span:
+        # Filter by impact
+        if impact == "High":
+            pass
+        elif INCLUDE_MEDIUM and impact == "Medium":
+            pass
+        else:
             continue
 
-        span = impact_span.find("span")
-        classes = " ".join(span.get("class", [])) if span else ""
-
-        if "impact-red" not in classes:
-            if not (INCLUDE_MEDIUM and "impact-ora" in classes):
-                continue
-
-        # ── Time ── (FF only shows time on first row of a time block)
-        time_cell = row.find("td", class_="calendar__time")
-        if time_cell:
-            t = time_cell.get_text(strip=True)
-            if t:
-                last_time = t
-
-        # ── Currency ──
-        currency_cell = row.find("td", class_="calendar__currency")
-        currency = currency_cell.get_text(strip=True) if currency_cell else ""
-
-        # ── Event name ──
-        event_cell = row.find("td", class_="calendar__event")
-        event_name = event_cell.get_text(strip=True) if event_cell else ""
-        if not event_name:
+        # Parse and convert time ET → SGT
+        sgt_time, event_date = _convert_time(date_str, time_str)
+        if event_date != today_sgt:
             continue
 
-        # ── Forecast / Previous ──
-        forecast_cell = row.find("td", class_="calendar__forecast")
-        previous_cell = row.find("td", class_="calendar__previous")
-        forecast = forecast_cell.get_text(strip=True) if forecast_cell else ""
-        previous = previous_cell.get_text(strip=True) if previous_cell else ""
+        events.append({
+            "title":    title,
+            "country":  country,
+            "time":     sgt_time,
+            "impact":   impact,
+            "forecast": forecast,
+            "previous": previous,
+        })
 
-        events.append(
-            {
-                "time": last_time,
-                "currency": currency,
-                "event": event_name,
-                "forecast": forecast,
-                "previous": previous,
-                "impact": "high" if "impact-red" in classes else "medium",
-            }
-        )
-
+    # Sort by time
+    events.sort(key=lambda e: e["time"])
     return events
 
 
-def _parse_ff_date(text: str) -> datetime.date | None:
+def _convert_time(date_str: str, time_str: str) -> tuple[str, datetime.date]:
     """
-    Forex Factory date cells look like:  'Tue\nApr 7'
-    We parse them into a datetime.date using the current year.
+    Convert an ET datetime string to SGT.
+    date_str: e.g. "04-13-2026"
+    time_str: e.g. "8:30am"
+    Returns: ("8:30pm", date_in_sgt)
     """
-    text = text.replace("\n", " ").strip()
-    # Remove day-of-week prefix  e.g. "Tue Apr 7" → "Apr 7"
-    parts = text.split()
-    if len(parts) >= 3:
-        # "Tue Apr 7" → try last two parts
-        date_str = " ".join(parts[-2:])
-    else:
-        date_str = text
+    try:
+        # Parse date
+        event_date_et = datetime.datetime.strptime(date_str, "%m-%d-%Y").date()
 
-    year = datetime.date.today().year
-    for fmt in ("%b %d", "%b %d"):
-        try:
-            d = datetime.datetime.strptime(f"{date_str} {year}", f"{fmt} %Y").date()
-            # Handle year rollover (December → January)
-            if d < datetime.date.today() - datetime.timedelta(days=180):
-                d = d.replace(year=year + 1)
-            return d
-        except ValueError:
-            continue
-    return None
+        # Parse time — may be empty ("All Day" events)
+        if not time_str or time_str.lower() in ("", "all day", "tentative"):
+            # No specific time — use midnight ET for date comparison
+            et_dt = datetime.datetime.combine(event_date_et, datetime.time(0, 0), tzinfo=ET_ZONE)
+        else:
+            # e.g. "8:30am", "12:00pm"
+            t = datetime.datetime.strptime(time_str.lower().strip(), "%I:%M%p")
+            et_dt = datetime.datetime.combine(
+                event_date_et,
+                t.time(),
+                tzinfo=ET_ZONE,
+            )
+
+        sgt_dt = et_dt.astimezone(SGT_ZONE)
+        time_label = sgt_dt.strftime("%I:%M%p").lstrip("0").lower()  # e.g. "8:30pm"
+        return time_label, sgt_dt.date()
+
+    except Exception:
+        # If parsing fails, return raw values and today's date
+        return time_str, datetime.datetime.now(SGT_ZONE).date()
 
 
 if __name__ == "__main__":
