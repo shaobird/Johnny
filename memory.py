@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 
 MEMORY_FILE = "memory.json"
+PLAYBOOK_FILE = "playbook.json"
 
 _DEFAULTS: dict = {
     "user": {
@@ -99,7 +100,35 @@ def get_context() -> str:
         note_lines = [f"  [{n['ts'][:10]}] {n['note']}" for n in recent]
         sections.append("JOHNNY'S NOTES (what I've learned)\n" + "\n".join(note_lines))
 
+    # Strategic playbook — mental models from top thinkers
+    playbook = _load_playbook()
+    if playbook:
+        pb_lines = []
+        for key, thinker in playbook.get("thinkers", {}).items():
+            pb_lines.append(f"\n  {thinker['name'].upper()}: {thinker['core_idea']}")
+            for m in thinker.get("models", []):
+                pb_lines.append(f"    • {m['name']}: {m['principle']}")
+        rules = playbook.get("decision_rules", [])
+        if rules:
+            pb_lines.append("\n  DECISION RULES:")
+            for r in rules:
+                pb_lines.append(f"    • {r}")
+        thesis = playbook.get("wealth_building_thesis", {})
+        if thesis:
+            pb_lines.append(f"\n  WEALTH THESIS: {thesis.get('core_belief', '')}")
+            for p in thesis.get("pillars", []):
+                pb_lines.append(f"    • {p}")
+        sections.append("STRATEGIC PLAYBOOK (apply these frameworks to every answer)\n" + "\n".join(pb_lines))
+
     if not sections:
         return "No memory data yet. Edit memory.json to add your profile and goals."
 
     return "\n\n".join(sections)
+
+
+def _load_playbook() -> dict:
+    """Load the strategic playbook from disk."""
+    if os.path.exists(PLAYBOOK_FILE):
+        with open(PLAYBOOK_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}

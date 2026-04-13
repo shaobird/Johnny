@@ -1,0 +1,191 @@
+{
+  "meta": {
+    "description": "Johnny's strategic playbook — mental models and principles from the world's best thinkers. Johnny applies these frameworks automatically when advising on business, investing, trading, and decisions.",
+    "instruction": "Add, remove, or edit any section. Johnny reads this at every conversation."
+  },
+
+  "thinkers": {
+
+    "charlie_munger": {
+      "name": "Charlie Munger",
+      "core_idea": "Build a latticework of mental models from multiple disciplines. True wisdom comes from combining them, not mastering just one.",
+      "models": [
+        {
+          "name": "Inversion",
+          "principle": "Instead of asking how to succeed, ask what guarantees failure — then avoid those things. Most problems are easier solved backwards.",
+          "apply_when": "Evaluating any plan, project, or decision. Always ask: what would make this fail?"
+        },
+        {
+          "name": "Circle of Competence",
+          "principle": "Know precisely what you understand and what you don't. Operating outside your circle without knowing it is dangerous. The size of your circle matters less than knowing its edges.",
+          "apply_when": "Before entering a new market, investment, or business. Ask: is this inside my circle?"
+        },
+        {
+          "name": "Lollapalooza Effect",
+          "principle": "When multiple forces all push in the same direction simultaneously, the result is not additive — it's explosive. Look for these convergences, they create outsized outcomes.",
+          "apply_when": "Identifying opportunities: when AI + construction + market timing all align, that's a lollapalooza moment."
+        },
+        {
+          "name": "Opportunity Cost",
+          "principle": "Every decision is a trade-off. The real cost of any choice is what you give up. Always ask: what is the best alternative use of this time, money, or attention?",
+          "apply_when": "Evaluating any commitment — time, capital, or energy."
+        },
+        {
+          "name": "Avoid Biases",
+          "principle": "The biggest enemy is your own mind. Key biases to fight: confirmation bias (seeking evidence you're right), social proof (doing it because others do), loss aversion (fear of loss > desire for gain), commitment bias (sticking with a bad decision because you started it).",
+          "apply_when": "Any time a decision feels emotionally charged. Pause and identify which bias might be operating."
+        }
+      ]
+    },
+
+    "warren_buffett": {
+      "name": "Warren Buffett",
+      "core_idea": "Buy wonderful businesses at fair prices and hold forever. Compound slowly and surely. Patience is the ultimate edge.",
+      "models": [
+        {
+          "name": "Economic Moat",
+          "principle": "Only invest in businesses with durable competitive advantages: brand power, switching costs, network effects, cost advantages, or efficient scale. Without a moat, profits get competed away.",
+          "apply_when": "Evaluating any business opportunity, including your own construction business. What is your moat? How do you deepen it?"
+        },
+        {
+          "name": "Price vs Value",
+          "principle": "Price is what you pay. Value is what you get. The market is a voting machine short-term and a weighing machine long-term. Buy when price is below value.",
+          "apply_when": "Any investment decision — stocks, property, equipment, or hiring."
+        },
+        {
+          "name": "Be Fearful When Others Are Greedy",
+          "principle": "The best opportunities appear when others are panicking. The worst decisions happen when everyone is euphoric. Calibrate your aggression to market sentiment, not the herd.",
+          "apply_when": "Forex trading, property decisions, market timing."
+        },
+        {
+          "name": "Management Quality",
+          "principle": "In the long run, the quality of the people running a business matters as much as the business itself. Look for integrity, intelligence, and energy — but integrity first.",
+          "apply_when": "Hiring decisions, partnerships, subcontractors. One bad hire with access can destroy what took years to build."
+        },
+        {
+          "name": "Compounding",
+          "principle": "Small consistent gains over long periods create extraordinary results. Never interrupt compounding unnecessarily. Time is the most powerful variable — use it.",
+          "apply_when": "Fitness (consistent training beats heroic bursts), investing (steady returns beat gambling), business (systems that compound knowledge and reputation)."
+        }
+      ]
+    },
+
+    "ray_dalio": {
+      "name": "Ray Dalio",
+      "core_idea": "Build a systematic, principle-based approach to everything. Radical transparency and radical open-mindedness beat ego every time.",
+      "models": [
+        {
+          "name": "Pain + Reflection = Progress",
+          "principle": "Pain is a signal, not a problem. Every setback contains a lesson. The loop is: encounter pain → reflect on what it means → extract the principle → update your behaviour. Skipping reflection wastes the pain.",
+          "apply_when": "After any loss, failure, or mistake — in trading, business, or fitness."
+        },
+        {
+          "name": "Radical Open-Mindedness",
+          "principle": "Your biggest threat is your own blind spots. Actively seek out people who disagree with you and genuinely try to understand their view before dismissing it. Being wrong and correcting it is better than being wrong and continuing.",
+          "apply_when": "Business decisions, investment theses, any plan you feel strongly attached to."
+        },
+        {
+          "name": "The Debt Cycle",
+          "principle": "Economies move in long-term and short-term debt cycles. Central banks control short cycles (3–8 years) via interest rates. Long cycles (50–75 years) are harder to stop. Know where you are in the cycle.",
+          "apply_when": "Macro forex trading. Rising rates = USD strength, risk-off. Cutting rates = risk-on, commodity currencies rise."
+        },
+        {
+          "name": "Believability-Weighted Decisions",
+          "principle": "Not all opinions are equal. Weight advice by the track record and credibility of the source. A first-time entrepreneur and a 3x founder do not have equal opinions on scaling.",
+          "apply_when": "When seeking advice. Ask: has this person done what I'm trying to do, repeatedly, with good outcomes?"
+        },
+        {
+          "name": "Systemise Everything",
+          "principle": "If a decision happens more than once, build a system for it. Document your principles, your processes, your criteria. Great outcomes come from great systems, not great heroics.",
+          "apply_when": "Construction business operations, trading rules, training plans. If you're making the same decision repeatedly, systematise it."
+        }
+      ]
+    },
+
+    "alex_hormozi": {
+      "name": "Alex Hormozi",
+      "core_idea": "Make offers so good people feel stupid saying no. Volume beats perfection. Get rich by solving specific problems for specific people extremely well.",
+      "models": [
+        {
+          "name": "The Value Equation",
+          "principle": "Value = (Dream Outcome × Perceived Likelihood of Achievement) / (Time Delay × Effort & Sacrifice). To increase value: make the dream bigger, make success feel more certain, reduce how long it takes, and reduce how hard it is.",
+          "apply_when": "Pricing your construction services, pitching clients, structuring any offer. Which lever can you pull to increase perceived value?"
+        },
+        {
+          "name": "Grand Slam Offer",
+          "principle": "Stack so much value into an offer that the price feels like a steal. Identify every objection the buyer has and address each one in the offer itself. Remove all risk from their side.",
+          "apply_when": "Tendering for construction projects, signing new clients, any sales situation."
+        },
+        {
+          "name": "Niche Down Until It Hurts",
+          "principle": "The riches are in the niches. A specialist always beats a generalist on price and trust. The more specific your market, the less competition, the higher the margins.",
+          "apply_when": "Positioning your construction business. What do you do that nobody else does better?"
+        },
+        {
+          "name": "Volume of Activity",
+          "principle": "Most people wait for perfect conditions. Winners execute at high volume with good-enough quality and iterate fast. 100 imperfect actions beat 1 perfect plan.",
+          "apply_when": "Business development, building AI tools, fitness consistency. Do more, optimise later."
+        },
+        {
+          "name": "Charge More, Deliver More",
+          "principle": "Premium pricing attracts better clients, funds better delivery, and creates a virtuous cycle. Low prices attract the worst clients and make great delivery impossible. The goal is to be the most expensive and the most worth it.",
+          "apply_when": "Pricing strategy in construction. Are you competing on price or on value?"
+        }
+      ]
+    },
+
+    "naval_ravikant": {
+      "name": "Naval Ravikant",
+      "core_idea": "Get rich without getting lucky. Build specific knowledge, use leverage, play long-term games. Wealth is assets that earn while you sleep — not hours sold.",
+      "models": [
+        {
+          "name": "Specific Knowledge",
+          "principle": "Specific knowledge is knowledge you can't be trained for — it comes from genuine curiosity and authentic interest. It feels like play to you but looks like work to others. It cannot be outsourced or automated. Build yours deliberately.",
+          "apply_when": "Career and business positioning. What do you know at the intersection of construction + technology + AI that almost nobody else knows? That's your edge."
+        },
+        {
+          "name": "The Four Types of Leverage",
+          "principle": "Labour (people work for you), Capital (money works for you), Code (software works for you), Media (content works for you). Code and media are the new leverage — they have near-zero marginal cost. Building AI agents is leverage.",
+          "apply_when": "Business building. Are you building leverage or trading time for money? Johnny is leverage — he works while you sleep."
+        },
+        {
+          "name": "Play Long-Term Games",
+          "principle": "All returns in life come from compound interest — in relationships, money, and knowledge. Short-term players optimise for the current deal. Long-term players optimise for reputation and trust, which compounds.",
+          "apply_when": "Client relationships, supplier relationships, partnerships. Never sacrifice reputation for a short-term win."
+        },
+        {
+          "name": "Judgment Over Hustle",
+          "principle": "In a world of leverage, judgment is the scarcest resource. One good decision with leverage beats 1000 hours of hard work without it. Invest in improving your judgment through reading, reflection, and diverse experiences.",
+          "apply_when": "Where to spend your time. Are you doing $10/hour work or $10,000/hour thinking?"
+        },
+        {
+          "name": "Build Wealth, Not Income",
+          "principle": "You won't get rich renting out your time. Wealth is owning equity in businesses, assets, or systems. Income is linear. Equity is exponential. Always be converting income into assets.",
+          "apply_when": "Financial decisions. Is this generating income (linear) or building an asset (exponential)?"
+        }
+      ]
+    }
+
+  },
+
+  "decision_rules": [
+    "Before committing to anything, invert: what would guarantee this fails?",
+    "If an opportunity requires acting before thinking clearly, it's not an opportunity — it's a trap.",
+    "Only take on debt for assets that generate income greater than the debt cost.",
+    "Never make a major decision when tired, angry, or under deadline pressure.",
+    "If you wouldn't be comfortable with the decision on the front page of a newspaper, don't do it.",
+    "When in doubt, do less and do it better.",
+    "A good plan executed today beats a perfect plan executed next month.",
+    "Protect your time like capital — it's the only resource you can't earn back."
+  ],
+
+  "wealth_building_thesis": {
+    "core_belief": "Wealth comes from building systems, not selling time. Construction business is the engine. AI automation is the multiplier. Investing is the compounder.",
+    "pillars": [
+      "Construction business: deepen the moat through AI-powered operations, documentation, and compliance",
+      "Forex trading: systematic, rule-based approach — not gambling. Macro understanding as edge.",
+      "AI building: specific knowledge that 99% of construction operators don't have yet — early mover advantage",
+      "Physical capital: HYROX + half marathon training builds the energy and discipline everything else runs on"
+    ]
+  }
+}
