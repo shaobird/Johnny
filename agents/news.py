@@ -18,6 +18,8 @@ No login required — the public calendar is fully accessible.
 If Cloudflare blocks simple requests, install playwright and set USE_PLAYWRIGHT=true in .env.
 """
 
+import asyncio
+import concurrent.futures
 import os
 import datetime
 import requests
@@ -86,15 +88,31 @@ def _fetch_with_requests() -> str:
 
 
 def _fetch_with_playwright() -> str:
-    """Fallback: use Playwright to render JS and bypass Cloudflare."""
-    from playwright.sync_api import sync_playwright
+    """Fallback: use async Playwright in a thread to bypass Cloudflare.
+    Runs in a separate thread so it gets its own event loop — safe inside asyncio."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(_playwright_thread)
+        return future.result(timeout=60)
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(CALENDAR_URL, wait_until="networkidle", timeout=30_000)
-        html = page.content()
-        browser.close()
+
+def _playwright_thread() -> str:
+    """Runs in a worker thread — creates its own event loop for async Playwright."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(_fetch_async_playwright())
+    finally:
+        loop.close()
+
+
+async def _fetch_async_playwright() -> str:
+    from playwright.async_api import async_playwright
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        await page.goto(CALENDAR_URL, wait_until="networkidle", timeout=30_000)
+        html = await page.content()
+        await browser.close()
         return html
 
 
