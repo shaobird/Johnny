@@ -30,6 +30,7 @@ from telegram.ext import (
 )
 
 import johnny
+import memory as mem
 from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
@@ -131,6 +132,41 @@ async def push_intel(app: Application) -> None:
         return
     text = get_intel_briefing()
     await _push(app, text)
+
+
+async def push_maintenance_report(app: Application) -> None:
+    """Runs at 02:00 nightly — cleans memory, no API cost."""
+    if not TELEGRAM_CHAT_ID:
+        return
+    try:
+        report = await asyncio.to_thread(mem.maintain)
+        print(f"[Memory] {report}")
+        # Only notify if something was actually cleaned
+        if "0 duplicates" not in report:
+            await app.bot.send_message(
+                chat_id=int(TELEGRAM_CHAT_ID),
+                text=f"🧹 Memory maintenance: {report}",
+            )
+    except Exception as e:
+        print(f"[Memory] Maintenance failed: {e}")
+
+
+async def push_weekly_retro(app: Application) -> None:
+    """Runs Sunday 08:00 — one Claude call, weekly pattern summary."""
+    if not TELEGRAM_CHAT_ID:
+        return
+    try:
+        summary = await asyncio.to_thread(mem.weekly_summary)
+        retro = await asyncio.to_thread(
+            johnny.chat,
+            f"Give me a concise weekly retro. Here are the notes you saved this week:\n\n{summary}\n\n"
+            "What patterns do you notice? What should I focus on or change next week? "
+            "Keep it under 200 words, plain text, no headers.",
+            None,
+        )
+        await _push(app, f"📊 *Weekly Retro*\n\n{retro}")
+    except Exception as e:
+        print(f"[Retro] Weekly retro failed: {e}")
 
 
 async def push_mrktedge_alerts(app: Application) -> None:

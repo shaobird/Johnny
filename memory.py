@@ -126,7 +126,57 @@ def get_context() -> str:
     return "\n\n".join(sections)
 
 
-def _load_playbook() -> dict:
+def maintain() -> str:
+    """
+    Lightweight overnight maintenance — no API calls, no cost.
+    - Removes exact duplicate notes
+    - Keeps notes sorted by timestamp
+    - Trims to last 200 notes max
+    - Returns a short report of what was cleaned
+    """
+    data = load()
+    notes: list = data.get("johnny_notes", [])
+    original_count = len(notes)
+
+    # Remove exact duplicates (same note text), keep most recent
+    seen_text: set = set()
+    deduped = []
+    for note in reversed(notes):
+        text = note.get("note", "").strip().lower()
+        if text not in seen_text:
+            seen_text.add(text)
+            deduped.append(note)
+    deduped.reverse()
+
+    # Sort by timestamp
+    deduped.sort(key=lambda n: n.get("ts", ""))
+
+    # Trim to last 200
+    deduped = deduped[-200:]
+
+    data["johnny_notes"] = deduped
+    save(data)
+
+    removed = original_count - len(deduped)
+    return f"Memory maintenance done: {original_count} notes → {len(deduped)} ({removed} duplicates removed)"
+
+
+def weekly_summary() -> str:
+    """
+    Pull the last 7 days of notes for use in the weekly retro.
+    Returns formatted text — Johnny's retro prompt uses this as input.
+    """
+    from datetime import timedelta
+    data = load()
+    notes = data.get("johnny_notes", [])
+    cutoff = (datetime.now() - timedelta(days=7)).isoformat()
+    recent = [n for n in notes if n.get("ts", "") >= cutoff]
+
+    if not recent:
+        return "No notes recorded in the last 7 days."
+
+    lines = [f"  [{n['ts'][:10]}] {n['note']}" for n in recent]
+    return "NOTES FROM THE LAST 7 DAYS:\n" + "\n".join(lines)
     """Load the strategic playbook from disk."""
     if os.path.exists(PLAYBOOK_FILE):
         with open(PLAYBOOK_FILE, "r", encoding="utf-8") as f:

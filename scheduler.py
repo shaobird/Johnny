@@ -5,6 +5,8 @@ Jobs:
   1. Morning briefing  (BRIEFING_TIME)       — calendar + fitness + forex events
   2. Intel briefing    (INTEL_BRIEFING_TIME) — AI + construction + macro + HYROX news
   3. MrktEdge monitor  (every 10 min)        — HIGH IMPACT news alerts, instant push
+  4. Memory maintenance (02:00 nightly)      — dedupe + sort notes, no API cost
+  5. Weekly retro       (Sunday 08:00)       — one-week pattern summary via Claude
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -18,8 +20,13 @@ def setup(app: Application) -> AsyncIOScheduler:
     Register all scheduled jobs and return the scheduler.
     Caller must call scheduler.start() and later scheduler.shutdown().
     """
-    # Avoid circular imports — telegram_bot imports johnny which imports agents
-    from telegram_bot import push_briefing, push_intel, push_mrktedge_alerts
+    from telegram_bot import (
+        push_briefing,
+        push_intel,
+        push_mrktedge_alerts,
+        push_maintenance_report,
+        push_weekly_retro,
+    )
 
     scheduler = AsyncIOScheduler()
 
@@ -58,6 +65,31 @@ def setup(app: Application) -> AsyncIOScheduler:
         id="mrktedge_monitor",
         replace_existing=True,
         misfire_grace_time=60,
+    )
+
+    # ── Job 4: Overnight memory maintenance (02:00 daily) — no API cost ───────
+    scheduler.add_job(
+        push_maintenance_report,
+        trigger="cron",
+        hour=2,
+        minute=0,
+        args=[app],
+        id="memory_maintenance",
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
+
+    # ── Job 5: Weekly retro (Sunday 08:00) — one Claude call per week ─────────
+    scheduler.add_job(
+        push_weekly_retro,
+        trigger="cron",
+        day_of_week="sun",
+        hour=8,
+        minute=0,
+        args=[app],
+        id="weekly_retro",
+        replace_existing=True,
+        misfire_grace_time=3600,
     )
 
     return scheduler
