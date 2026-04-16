@@ -13,6 +13,7 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
+from agents.training_loop import get_training_analysis, log_proposal, record_outcome
 import memory as mem
 from config import ANTHROPIC_API_KEY
 
@@ -145,14 +146,57 @@ _TOOLS = [
             "required": ["note"],
         },
     },
+    {
+        "name": "analyze_training",
+        "description": (
+            "Analyze the last 4 weeks of training data (Strava + Hevy). "
+            "Identifies trends in run volume, pace, gym compliance. "
+            "Proposes one specific adjustment for next week using the Karpathy Loop pattern. "
+            "Returns winning/losing patterns detected over time."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "log_training_proposal",
+        "description": (
+            "Log a proposed training adjustment so Johnny can track whether it worked next week."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "proposal": {"type": "string", "description": "The specific change proposed."},
+                "variable":  {"type": "string", "description": "What training variable is being changed."},
+                "hypothesis": {"type": "string", "description": "Why this change should help."},
+            },
+            "required": ["proposal", "variable", "hypothesis"],
+        },
+    },
+    {
+        "name": "record_training_outcome",
+        "description": (
+            "Record whether last week's proposed training adjustment worked. "
+            "Updates the winning/losing patterns log."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "outcome":          {"type": "string", "description": "What happened."},
+                "metric_improved":  {"type": "boolean", "description": "True if the target metric improved."},
+            },
+            "required": ["outcome", "metric_improved"],
+        },
+    },
 ]
 
 _HANDLERS = {
-    "check_calendar":    lambda _: get_todays_events(),
-    "check_fitness":     lambda _: get_fitness_summary(),
-    "get_forex_news":    lambda _: get_high_impact_news(),
-    "get_intel_briefing": lambda _: get_intel_briefing(),
-    "save_note":         lambda inp: mem.add_note(inp["note"]),
+    "check_calendar":          lambda _:   get_todays_events(),
+    "check_fitness":           lambda _:   get_fitness_summary(),
+    "get_forex_news":          lambda _:   get_high_impact_news(),
+    "get_intel_briefing":      lambda _:   get_intel_briefing(),
+    "save_note":               lambda inp: mem.add_note(inp["note"]),
+    "analyze_training":        lambda _:   get_training_analysis(),
+    "log_training_proposal":   lambda inp: log_proposal(inp["proposal"], inp["variable"], inp["hypothesis"]),
+    "record_training_outcome": lambda inp: record_outcome(inp["outcome"], inp["metric_improved"]),
 }
 
 

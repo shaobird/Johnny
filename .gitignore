@@ -8,6 +8,9 @@
 mrktedge_cookies.json
 seen_mrktedge.json
 
+# Training loop runtime data — never commit
+training_log.json
+
 # Google OAuth tokens
 token.pickle
 credentials.json
