@@ -7,6 +7,7 @@ Jobs:
   3. MrktEdge monitor  (every 10 min)        — HIGH IMPACT news alerts, instant push
   4. Memory maintenance (02:00 nightly)      — dedupe + sort notes, no API cost
   5. Weekly retro       (Sunday 08:00)       — one-week pattern summary via Claude
+  6. Gmail monitor      (every 30 min)       — new relevant emails, instant push
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -26,6 +27,7 @@ def setup(app: Application) -> AsyncIOScheduler:
         push_mrktedge_alerts,
         push_maintenance_report,
         push_weekly_retro,
+        push_email_alerts,
     )
 
     scheduler = AsyncIOScheduler()
@@ -90,6 +92,17 @@ def setup(app: Application) -> AsyncIOScheduler:
         id="weekly_retro",
         replace_existing=True,
         misfire_grace_time=3600,
+    )
+
+    # ── Job 6: Gmail monitor (every 30 minutes) ───────────────────────────────
+    scheduler.add_job(
+        push_email_alerts,
+        trigger="interval",
+        minutes=30,
+        args=[app],
+        id="gmail_monitor",
+        replace_existing=True,
+        misfire_grace_time=300,
     )
 
     return scheduler

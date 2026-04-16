@@ -11,6 +11,9 @@ seen_mrktedge.json
 # Training loop runtime data — never commit
 training_log.json
 
+# Gmail runtime state — never commit
+seen_emails.json
+
 # Google OAuth tokens
 token.pickle
 credentials.json

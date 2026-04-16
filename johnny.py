@@ -14,6 +14,7 @@ from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.training_loop import get_training_analysis, log_proposal, record_outcome
+from agents.gmail import get_email_summary
 import memory as mem
 from config import ANTHROPIC_API_KEY
 
@@ -148,6 +149,15 @@ _TOOLS = [
         },
     },
     {
+        "name": "check_emails",
+        "description": (
+            "Check Johnny's Gmail inbox for new relevant emails. "
+            "Filters out promotions and low-signal mail. "
+            "Returns urgent, action-needed, market, and construction emails only."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
         "name": "analyze_training",
         "description": (
             "Analyze the last 4 weeks of training data (Strava + Hevy). "
@@ -190,6 +200,7 @@ _TOOLS = [
 ]
 
 _HANDLERS = {
+    "check_emails":            lambda _:   get_email_summary(),
     "check_calendar":          lambda _:   get_todays_events(),
     "check_fitness":           lambda _:   get_fitness_summary(),
     "get_forex_news":          lambda _:   get_high_impact_news(),

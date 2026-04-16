@@ -36,6 +36,7 @@ from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.mrktedge import check_new_items, format_item
+from agents.gmail import get_new_emails, format_email
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
@@ -132,6 +133,22 @@ async def push_intel(app: Application) -> None:
         return
     text = get_intel_briefing()
     await _push(app, text)
+
+
+async def push_email_alerts(app: Application) -> None:
+    """Called every 30 min — pushes new relevant emails instantly."""
+    if not TELEGRAM_CHAT_ID:
+        return
+    try:
+        new_emails = await asyncio.to_thread(get_new_emails)
+        for email in new_emails:
+            await app.bot.send_message(
+                chat_id=int(TELEGRAM_CHAT_ID),
+                text=format_email(email),
+                parse_mode="Markdown",
+            )
+    except Exception as e:
+        print(f"[Gmail] Push failed: {e}")
 
 
 async def push_maintenance_report(app: Application) -> None:
