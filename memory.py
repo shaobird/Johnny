@@ -10,10 +10,13 @@ Johnny can also update it automatically via the save_note tool.
 
 import json
 import os
+import threading
 from datetime import datetime
 
 MEMORY_FILE = "memory.json"
 PLAYBOOK_FILE = "playbook.json"
+
+_lock = threading.Lock()
 
 _DEFAULTS: dict = {
     "user": {
@@ -39,19 +42,26 @@ _DEFAULTS: dict = {
 
 def load() -> dict:
     """Load memory from disk. Returns defaults if file doesn't exist yet."""
-    if os.path.exists(MEMORY_FILE):
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    # First run — seed with defaults and save
-    save(_DEFAULTS.copy())
-    return _DEFAULTS.copy()
+    with _lock:
+        if os.path.exists(MEMORY_FILE):
+            with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        _save_unlocked(_DEFAULTS.copy())
+        return _DEFAULTS.copy()
 
 
 def save(data: dict) -> None:
     """Persist memory to disk."""
+    with _lock:
+        _save_unlocked(data)
+
+
+def _save_unlocked(data: dict) -> None:
     data["last_updated"] = datetime.now().isoformat()
-    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+    tmp = MEMORY_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, MEMORY_FILE)
 
 
 def add_note(note: str) -> str:
