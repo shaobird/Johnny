@@ -218,13 +218,13 @@ _HANDLERS = {
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def chat(message: str, history: list[dict] | None = None) -> str:
+def chat(message: str, history: list[dict] | None = None, use_opus: bool = False) -> str:
     """
     Send a message to Johnny and return his reply.
     Pass the prior conversation turns as `history` to maintain context.
     """
     messages = list(history or []) + [{"role": "user", "content": message}]
-    return _run_loop(messages)
+    return _run_loop(messages, use_opus=use_opus)
 
 
 def daily_briefing() -> str:
@@ -243,7 +243,8 @@ def daily_briefing() -> str:
         "The 2–3 things that matter most today. Be specific, not generic.\n\n"
         "✅ ONE ACTION\n"
         "Single most important thing I should do right now.\n\n"
-        "Save any patterns or baselines you notice to memory."
+        "Save any patterns or baselines you notice to memory.",
+        use_opus=True,
     )
 
 
@@ -268,19 +269,20 @@ def _log_usage(response: anthropic.types.Message) -> None:
 
 # ── Agentic loop ──────────────────────────────────────────────────────────────
 
-def _run_loop(messages: list[dict]) -> str:
+def _run_loop(messages: list[dict], use_opus: bool = False) -> str:
     """
     Run the tool-use loop until Johnny reaches end_turn.
-    Adaptive thinking is enabled so Claude reasons before every response.
+    Opus is used for briefings; Sonnet for freeform chat (80% cheaper).
     """
+    model = "claude-opus-4-6" if use_opus else "claude-sonnet-4-6"
     response: anthropic.types.Message | None = None
 
     for _ in range(MAX_ITERATIONS):
         response = _client.messages.create(
-            model="claude-opus-4-6",
+            model=model,
             max_tokens=8096,
-            thinking={"type": "adaptive"},   # ← lever 1: deep reasoning
-            system=_build_system_prompt(),    # ← lever 2: memory injected fresh
+            thinking={"type": "adaptive"},
+            system=_build_system_prompt(),
             tools=_TOOLS,
             messages=messages,
         )
