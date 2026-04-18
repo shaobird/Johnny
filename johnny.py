@@ -227,9 +227,20 @@ def daily_briefing() -> str:
     """Trigger the full morning briefing — Johnny calls all agents and synthesises."""
     return chat(
         "Good morning. Give me my complete daily briefing. "
-        "Check my calendar, review my fitness, pull the high-impact Forex events, "
-        "and tell me the 2–3 things I should focus on today. "
-        "Save any patterns or baselines you notice to your memory."
+        "Call all agents first, then structure your reply exactly like this:\n\n"
+        "📅 CALENDAR\n"
+        "List today's meetings with times. If none, say so.\n\n"
+        "💪 FITNESS\n"
+        "Last 7 days summary. Am I on track? Any warning signs?\n\n"
+        "🔴 FOREX\n"
+        "Today's high-impact events with times (SGT) and currencies. If none, say so.\n\n"
+        "🧠 INTEL\n"
+        "Skip unless asked — keep briefing fast.\n\n"
+        "⚡ PRIORITIES\n"
+        "The 2–3 things that matter most today. Be specific, not generic.\n\n"
+        "✅ ONE ACTION\n"
+        "Single most important thing I should do right now.\n\n"
+        "Save any patterns or baselines you notice to memory."
     )
 
 

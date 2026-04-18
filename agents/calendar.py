@@ -13,6 +13,7 @@ First-time setup:
 import os
 import pickle
 import datetime
+from zoneinfo import ZoneInfo
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -20,6 +21,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from config import GOOGLE_CREDENTIALS_FILE
+
+SGT = ZoneInfo("Asia/Singapore")
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 TOKEN_FILE = "token.pickle"
@@ -31,9 +34,9 @@ def get_todays_events() -> str:
         creds = _get_credentials()
         service = build("calendar", "v3", credentials=creds)
 
-        now = datetime.datetime.utcnow()
-        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
-        day_end = now.replace(hour=23, minute=59, second=59, microsecond=0).isoformat() + "Z"
+        now = datetime.datetime.now(SGT)
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        day_end = now.replace(hour=23, minute=59, second=59, microsecond=0).isoformat()
 
         result = (
             service.events()
