@@ -342,10 +342,16 @@ def format_item(item: dict) -> str:
 
 
 if __name__ == "__main__":
-    items = check_new_items()
-    if items:
-        for item in items:
-            print(format_item(item))
-            print("---")
-    else:
-        print("No new HIGH IMPACT items.")
+    print("[MrktEdge] Starting scrape...")
+    try:
+        import asyncio
+        items = asyncio.run(_scrape(headless=False))  # headless=False so you can see the browser
+        print(f"[MrktEdge] Found {len(items)} items total")
+        if items:
+            for item in items:
+                print(format_item(item))
+                print("---")
+        else:
+            print("[MrktEdge] No HIGH IMPACT items found on page.")
+    except Exception as e:
+        print(f"[MrktEdge] Error: {e}")
