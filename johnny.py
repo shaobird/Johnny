@@ -8,6 +8,7 @@ Intelligence levers active:
   4. Supervisor prompt  — told to prioritise and advise, not just report data
 """
 
+import concurrent.futures
 import anthropic
 from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
@@ -269,21 +270,16 @@ def _run_loop(messages: list[dict]) -> str:
 
         if response.stop_reason == "tool_use":
             messages.append({"role": "assistant", "content": response.content})
-            tool_results = []
-            for block in response.content:
-                if block.type == "tool_use":
-                    handler = _HANDLERS.get(block.name)
-                    if handler:
-                        result = handler(block.input)
-                    else:
-                        result = f"Unknown tool: {block.name}"
-                    tool_results.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": str(result),
-                        }
-                    )
+            tool_blocks = [b for b in response.content if b.type == "tool_use"]
+
+            def _call(block):
+                handler = _HANDLERS.get(block.name)
+                result = handler(block.input) if handler else f"Unknown tool: {block.name}"
+                return {"type": "tool_result", "tool_use_id": block.id, "content": str(result)}
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                tool_results = list(executor.map(_call, tool_blocks))
+
             messages.append({"role": "user", "content": tool_results})
             continue
 
