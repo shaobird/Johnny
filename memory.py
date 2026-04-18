@@ -177,6 +177,9 @@ def weekly_summary() -> str:
 
     lines = [f"  [{n['ts'][:10]}] {n['note']}" for n in recent]
     return "NOTES FROM THE LAST 7 DAYS:\n" + "\n".join(lines)
+
+
+def _load_playbook() -> dict:
     """Load the strategic playbook from disk."""
     if os.path.exists(PLAYBOOK_FILE):
         with open(PLAYBOOK_FILE, "r", encoding="utf-8") as f:
