@@ -19,6 +19,8 @@ Setup:
 """
 
 import asyncio
+import os
+import tempfile
 
 from telegram import Update
 from telegram.ext import (
@@ -37,7 +39,7 @@ from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
 _history: dict[int, list[dict]] = {}
@@ -106,6 +108,43 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     _history[user_id] = history[-_MAX_HISTORY:]
 
     await _send_long(update, reply)
+
+
+# ── Voice handler ─────────────────────────────────────────────────────────────
+
+async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not OPENAI_API_KEY:
+        await update.message.reply_text("Voice not configured — add OPENAI_API_KEY to .env")
+        return
+
+    await update.message.reply_text("🎙️ Transcribing...")
+
+    try:
+        from openai import OpenAI
+        oai = OpenAI(api_key=OPENAI_API_KEY)
+
+        voice_file = await update.message.voice.get_file()
+        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
+            tmp_path = tmp.name
+        await voice_file.download_to_drive(tmp_path)
+
+        with open(tmp_path, "rb") as f:
+            transcript = oai.audio.transcriptions.create(model="whisper-1", file=f)
+        os.unlink(tmp_path)
+
+        text = transcript.text
+        await update.message.reply_text(f'_{text}_', parse_mode="Markdown")
+
+        user_id = update.effective_user.id
+        history = _history.get(user_id, [])
+        reply = johnny.chat(text, history)
+        history.append({"role": "user", "content": text})
+        history.append({"role": "assistant", "content": reply})
+        _history[user_id] = history[-_MAX_HISTORY:]
+        await _send_long(update, reply)
+
+    except Exception as e:
+        await update.message.reply_text(f"Voice transcription failed: {e}")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -220,4 +259,5 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("news", cmd_news))
     app.add_handler(CommandHandler("intel", cmd_intel))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     return app

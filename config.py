@@ -31,3 +31,6 @@ INTEL_BRIEFING_TIME = os.getenv("INTEL_BRIEFING_TIME", "07:30")
 # MrktEdge — High Impact news monitor
 MRKTEDGE_EMAIL = os.getenv("MRKTEDGE_EMAIL")
 MRKTEDGE_PASSWORD = os.getenv("MRKTEDGE_PASSWORD")
+
+# OpenAI — Whisper voice transcription
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
