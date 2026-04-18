@@ -11,6 +11,9 @@ seen_mrktedge.json
 # Training loop runtime data — never commit
 training_log.json
 
+# API usage log — never commit
+usage_log.json
+
 # Gmail runtime state — never commit
 seen_emails.json
 

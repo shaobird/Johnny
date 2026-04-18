@@ -9,6 +9,9 @@ Intelligence levers active:
 """
 
 import concurrent.futures
+import json
+import os
+from datetime import datetime
 import anthropic
 from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
@@ -246,6 +249,25 @@ def daily_briefing() -> str:
     )
 
 
+# ── Usage tracking ───────────────────────────────────────────────────────────
+
+USAGE_LOG = "usage_log.json"
+
+def _log_usage(response: anthropic.types.Message) -> None:
+    entry = {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "input_tokens": response.usage.input_tokens,
+        "output_tokens": response.usage.output_tokens,
+    }
+    log = []
+    if os.path.exists(USAGE_LOG):
+        with open(USAGE_LOG, "r") as f:
+            log = json.load(f)
+    log.append(entry)
+    with open(USAGE_LOG, "w") as f:
+        json.dump(log, f, indent=2)
+
+
 # ── Agentic loop ──────────────────────────────────────────────────────────────
 
 def _run_loop(messages: list[dict]) -> str:
@@ -264,6 +286,7 @@ def _run_loop(messages: list[dict]) -> str:
             tools=_TOOLS,
             messages=messages,
         )
+        _log_usage(response)
 
         if response.stop_reason == "end_turn":
             return _extract_text(response)
