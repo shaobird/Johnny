@@ -34,8 +34,11 @@ developments from the last 7 days and translate each one into an implication
 for a Singapore contractor who also handles facility maintenance.
 
 ━━━ READER PROFILE ━━━
-• Runs a construction + facility maintenance business in Singapore
-• Bids on public-sector work via GeBIZ; tracks government agency capex closely
+• Runs a SME construction + facility maintenance business in Singapore
+• Realistic tender size: up to ~S$10M. Ignore mega-projects above this — they
+  are not biddable. Small-to-mid-cap jobs and sub-packages are the sweet spot.
+• Bids on public-sector work via GeBIZ AND private-sector tenders (REITs,
+  developers, MCSTs, industrial owners, healthcare groups, schools)
 • Cares about WSH compliance — no tolerance for safety incidents on site
 • Curious about where global construction tech is heading (robotics, modular,
   prefab, BIM, 3D printing, digital twins, drones, AI takeoff, green materials)
@@ -93,28 +96,54 @@ Implication: [One sentence — what this means for bidding, margins, manpower,
 or FM contract renewals]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💰 *SG GOVERNMENT AGENCY BUDGETS & TENDERS*
-Scan all major government sector buyers. For each, report ANY of: budget
-announcements, Parliamentary replies, major tender calls, awarded contracts,
-masterplan updates from the last 7 days.
+💰 *SG TENDER PIPELINE — GOVERNMENT + PRIVATE*
 
-Agencies to cover (include only those with real news):
+TENDER-SIZE FILTER: The reader can only realistically bid jobs up to ~S$10M.
+PRIORITISE tenders in the S$200K – S$10M range. SKIP anything above S$15M
+unless it is a sub-package a small contractor can credibly take. Briefly flag
+one or two "too big to bid, watch for sub-packages" items at the bottom, but
+the bulk of this section must be biddable at SME scale.
+
+Scan BOTH public AND private sector tenders called or awarded in the last 7
+days. Prioritise small-to-mid scale work and FM contracts.
+
+GOVERNMENT SOURCES (via GeBIZ and agency sites) — include only those with
+real news at the right size:
   MND · HDB · URA · BCA · JTC · LTA · CAAS · MPA · NEA · PUB · NParks ·
-  MOH · MOE · MINDEF · MHA · SPF · SCDF · MCCY · People's Association ·
-  Sport SG · STB · Enterprise SG · GovTech · SLA
+  MOH (and SingHealth / NHG / NUHS clusters) · MOE · MINDEF/DSTA · MHA ·
+  SPF · SCDF · MCCY · People's Association (CCs, RCs) · Sport SG · STB ·
+  Enterprise SG · GovTech · SLA · town councils (all 17)
+
+PRIVATE SOURCES to scan:
+  • Singapore REITs (CapitaLand, Mapletree, Frasers, Keppel, ESR-LOGOS,
+    Sabana, Lendlease Global, Paragon, Suntec, Starhill) — asset enhancement
+    works, FM tenders, M&E upgrades
+  • Private developers (CDL, UOL, GuocoLand, Hong Leong, Frasers Property,
+    Far East, Allgreen, Chip Eng Seng) — fit-out, A&A, landscape packages
+  • Industrial / data-centre operators (Equinix, Digital Realty, ST Telemedia,
+    KDDI, STACK) — MEP maintenance, building works
+  • MCSTs / condo managing agents — refurbishment, repaint, waterproofing,
+    upgrading works
+  • Healthcare groups (Raffles Medical, Parkway, IHH, Thomson Medical)
+  • Private schools / international schools — small works, FM
+  • F&B chains, retail mall operators — shopfit, MEP maintenance, A&A
+  • Industry boards: REDAS, SCAL, SCIC notices
 
 Format per item:
-🏛️ [Agency — short headline]
-What: [Tender / budget / contract — value in S$, closing date or award date]
+🏛️ [Buyer — short headline]    (public)
+🏢 [Buyer — short headline]    (private)
+What: [Scope, value in S$ if disclosed, closing or award date, reference no.]
 Angle: [One sentence — can the reader bid directly, subcontract, or position
 for a follow-on scope?]
 
-GeBIZ link or tender reference number if you find it. No speculation.
+Include GeBIZ reference numbers where available. For private tenders cite
+source (REIT announcement, SGX filing, trade publication). No speculation.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🧭 *THIS WEEK'S 3 BETS*
-Three numbered items. Each one specific and actionable:
-  1. A tender or opportunity to register / pre-qualify for
+Three numbered items. Each one specific and actionable at SME scale:
+  1. A biddable tender (S$10M or under — public or private) to register /
+     pre-qualify / submit for
   2. A safety or compliance action for the site team
   3. A market or tech signal worth a 30-minute deeper read
 
@@ -147,9 +176,12 @@ def get_weekly_newsletter() -> str:
                 "  2. Singapore Workplace Safety & Health bulletin (MOM / WSH Council)\n"
                 "  3. Singapore construction & facility maintenance market data\n"
                 "     (BCA, URA, SingStat, material prices, tender price index)\n"
-                "  4. Singapore government agency budgets, tender calls, and "
-                "     awarded contracts (MND, HDB, URA, BCA, JTC, LTA, CAAS, "
-                "     MPA, NEA, PUB, MOH, MOE, MINDEF, GovTech, etc. via GeBIZ)\n\n"
+                "  4. Singapore tender pipeline — GOVERNMENT (GeBIZ: MND, HDB, "
+                "     URA, BCA, JTC, LTA, NEA, PUB, MOH, MOE, MINDEF, town "
+                "     councils) AND PRIVATE (REITs, developers, data centres, "
+                "     MCSTs, healthcare, schools, malls). "
+                "     HARD FILTER: tender size up to ~S$10M only. Skip "
+                "     mega-projects unless calling out a likely sub-package.\n\n"
                 "Follow the structure in the system prompt exactly. End with "
                 "THIS WEEK'S 3 BETS — three numbered, actionable items."
             ),

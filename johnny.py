@@ -140,12 +140,13 @@ _TOOLS = [
         "name": "get_weekly_newsletter",
         "description": (
             "Generate the weekly Friday construction newsletter for the user's "
-            "Singapore construction + facility maintenance business. Covers: "
+            "Singapore SME construction + facility maintenance business. Covers: "
             "global construction tech, SG WSH bulletin (MOM / WSH Council), "
             "SG construction & FM market data (BCA, URA, SingStat), and SG "
-            "government agency budgets & tender calls (MND, HDB, LTA, JTC, "
-            "BCA, NEA, PUB, MOH, MOE, MINDEF, etc.). Ends with 3 actionable "
-            "bets for the week. Takes 2–3 minutes to run."
+            "tender pipeline — BOTH government (GeBIZ: HDB, LTA, JTC, BCA, "
+            "NEA, PUB, town councils, etc.) AND private (REITs, developers, "
+            "data centres, MCSTs, healthcare). Filters to biddable SME size "
+            "(≤ ~S$10M). Ends with 3 actionable bets. Takes 2–3 minutes."
         ),
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },

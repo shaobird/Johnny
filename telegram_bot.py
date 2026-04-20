@@ -95,7 +95,8 @@ async def cmd_news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_newsletter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "🏗️ Building your weekly construction newsletter…\n"
-        "Scanning global tech, SG WSH, BCA/URA data, and government tenders.\n"
+        "Scanning global tech, SG WSH, BCA/URA data, and SME-scale tenders "
+        "(govt + private, ≤S$10M).\n"
         "This takes 2–3 minutes ⏳"
     )
     await _send_long(update, get_weekly_newsletter())
