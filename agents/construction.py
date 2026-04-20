@@ -190,7 +190,9 @@ Format per item:
 🏛️ [Buyer — short headline]    (public)   |  workhead: CW01 / CR06 / etc.
 🏢 [Buyer — short headline]    (private)  |  workhead: CR09 / FM01 / etc.
 What: [Scope · S$ value · close/award date · reference no.]
-Source: [Direct portal name + URL]
+🔗 Link: [Full clickable URL to the tender listing — must start with https://
+         Prefer the direct tender-detail page. If only a portal landing page
+         is available, include it and note "search by ref no." in brackets.]
 Angle: [One line — bid direct, JV, sub, or pre-qualify for next round]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -200,7 +202,8 @@ filter. Includes anything previously called but still open. This is the
 forward planning section — what to start costing now.
 
 Format per item:
-⏳ [Buyer — scope] · workhead · S$XXX · closes DD Mon · source
+⏳ [Buyer — scope] · workhead · S$XXX · closes DD Mon
+🔗 [Full clickable URL — must start with https://]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 *REGULATORY & COMPLIANCE DEADLINES*
@@ -223,7 +226,10 @@ Three numbered items. Each specific and actionable at SME scale:
 
 ━━━ RULES ━━━
 • Window: last 7 days for news. Up to 4 weeks for the watchlist section.
-• Primary sources > aggregators. Cite a URL for every tender.
+• Primary sources > aggregators.
+• EVERY tender (pipeline + watchlist) MUST include a working URL. No URL =
+  drop the item. If only a search landing page exists, include that URL and
+  add the reference number so the reader can find it in one click.
 • Every number gets a source. Every source gets a date.
 • If a section has no qualifying news, say so in one line — do NOT pad.
 • If you cannot find tenders matching the workhead filter, say so honestly
