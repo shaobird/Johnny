@@ -8,12 +8,13 @@ Jobs:
   4. Memory maintenance (02:00 nightly)      — dedupe + sort notes, no API cost
   5. Weekly retro       (Sunday 08:00)       — one-week pattern summary via Claude
   6. Gmail monitor      (every 30 min)       — new relevant emails, instant push
+  7. Weekly newsletter  (Friday NEWSLETTER_TIME) — construction intel for SG biz
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import Application
 
-from config import BRIEFING_TIME, INTEL_BRIEFING_TIME
+from config import BRIEFING_TIME, INTEL_BRIEFING_TIME, NEWSLETTER_TIME
 
 
 def setup(app: Application) -> AsyncIOScheduler:
@@ -28,6 +29,7 @@ def setup(app: Application) -> AsyncIOScheduler:
         push_maintenance_report,
         push_weekly_retro,
         push_email_alerts,
+        push_weekly_newsletter,
     )
 
     scheduler = AsyncIOScheduler()
@@ -103,6 +105,20 @@ def setup(app: Application) -> AsyncIOScheduler:
         id="gmail_monitor",
         replace_existing=True,
         misfire_grace_time=300,
+    )
+
+    # ── Job 7: Weekly construction newsletter (Friday NEWSLETTER_TIME) ────────
+    n_hour, n_min = NEWSLETTER_TIME.split(":")
+    scheduler.add_job(
+        push_weekly_newsletter,
+        trigger="cron",
+        day_of_week="fri",
+        hour=int(n_hour),
+        minute=int(n_min),
+        args=[app],
+        id="weekly_newsletter",
+        replace_existing=True,
+        misfire_grace_time=3600,
     )
 
     return scheduler

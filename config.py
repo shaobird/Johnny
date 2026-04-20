@@ -28,6 +28,9 @@ BRIEFING_TIME = os.getenv("BRIEFING_TIME", "07:00")
 # Recommend sending 30–60 min after the morning briefing
 INTEL_BRIEFING_TIME = os.getenv("INTEL_BRIEFING_TIME", "07:30")
 
+# Weekly construction newsletter — fires every Friday
+NEWSLETTER_TIME = os.getenv("NEWSLETTER_TIME", "08:00")
+
 # MrktEdge — High Impact news monitor
 MRKTEDGE_EMAIL = os.getenv("MRKTEDGE_EMAIL")
 MRKTEDGE_PASSWORD = os.getenv("MRKTEDGE_PASSWORD")

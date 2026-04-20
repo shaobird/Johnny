@@ -8,6 +8,7 @@ Commands:
   /fitness  — fitness summary only
   /news     — Forex Factory high-impact events only
   /intel    — daily intelligence briefing (AI, construction, forex, HYROX)
+  /newsletter — weekly construction newsletter (SG tenders, WSH, market data)
   /journal  — save a journal entry (e.g. /journal Today was tough but productive)
   /reflect  — Johnny reflects on your last 7 days of journal entries
 
@@ -33,6 +34,7 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
+from agents.construction import get_weekly_newsletter
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
@@ -55,7 +57,8 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "  /calendar — today's meetings\n"
         "  /fitness  — workout summary\n"
         "  /news     — Forex high-impact events\n"
-        "  /intel    — daily intelligence briefing\n\n"
+        "  /intel    — daily intelligence briefing\n"
+        "  /newsletter — weekly construction newsletter (Fridays)\n\n"
         "Or just talk to me normally."
     )
 
@@ -87,6 +90,15 @@ async def cmd_intel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("🔴 Scraping Forex Factory…")
     await _send_long(update, get_high_impact_news())
+
+
+async def cmd_newsletter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "🏗️ Building your weekly construction newsletter…\n"
+        "Scanning global tech, SG WSH, BCA/URA data, and government tenders.\n"
+        "This takes 2–3 minutes ⏳"
+    )
+    await _send_long(update, get_weekly_newsletter())
 
 
 # ── Free-text handler ─────────────────────────────────────────────────────────
@@ -204,6 +216,18 @@ async def push_intel(app: Application) -> None:
     await _push(app, text)
 
 
+async def push_weekly_newsletter(app: Application) -> None:
+    """Called every Friday — sends the weekly construction newsletter."""
+    if not TELEGRAM_CHAT_ID:
+        print("TELEGRAM_CHAT_ID not set — skipping weekly newsletter.")
+        return
+    try:
+        text = await asyncio.to_thread(get_weekly_newsletter)
+        await _push(app, text)
+    except Exception as e:
+        print(f"[Newsletter] Weekly newsletter failed: {e}")
+
+
 async def push_email_alerts(app: Application) -> None:
     """Called every 30 min — pushes new relevant emails instantly."""
     if not TELEGRAM_CHAT_ID:
@@ -288,6 +312,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("fitness", cmd_fitness))
     app.add_handler(CommandHandler("news", cmd_news))
     app.add_handler(CommandHandler("intel", cmd_intel))
+    app.add_handler(CommandHandler("newsletter", cmd_newsletter))
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
