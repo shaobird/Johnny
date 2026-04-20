@@ -31,6 +31,19 @@ INTEL_BRIEFING_TIME = os.getenv("INTEL_BRIEFING_TIME", "07:30")
 # Weekly construction newsletter — fires every Friday
 NEWSLETTER_TIME = os.getenv("NEWSLETTER_TIME", "08:00")
 
+# BCA Contractors Registration System — the user's registered workheads.
+# Comma-separated. The construction newsletter agent uses this to filter
+# tenders to scope + grade-limit matches.
+# Grade letters drive the S$ filter (C3≈0.65M · C2≈1.3M · C1≈4M · B2≈13M · B1≈40M).
+BCA_WORKHEADS = os.getenv(
+    "BCA_WORKHEADS",
+    "CR06,CR09,CR13,CW01,FM01",  # Painting · Interior · Cleaning · GB · FM
+)
+
+# Max tender value to surface, in S$ millions. Override if you want to bid
+# bigger. Default matches a C1-grade contractor's ceiling.
+TENDER_MAX_SGD_M = float(os.getenv("TENDER_MAX_SGD_M", "10"))
+
 # MrktEdge — High Impact news monitor
 MRKTEDGE_EMAIL = os.getenv("MRKTEDGE_EMAIL")
 MRKTEDGE_PASSWORD = os.getenv("MRKTEDGE_PASSWORD")

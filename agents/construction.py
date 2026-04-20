@@ -1,24 +1,26 @@
 """
 Construction Newsletter Agent — Weekly Friday Briefing
 
-Generates a weekly intelligence newsletter for a Singapore construction business
-owner. Uses Claude + live web search to pull high-signal items across four
-tightly scoped domains:
+Generates a weekly intelligence newsletter for a Singapore SME construction
+business owner. Uses Claude + live web search to pull high-signal items,
+filtered by the user's BCA workheads (BCA_WORKHEADS in config) and tender
+size cap (TENDER_MAX_SGD_M).
 
-  1. 🌍 Global construction tech — robotics, modular, BIM, 3D printing, materials
-  2. 🦺 Singapore WSH bulletin — MOM / WSH Council incidents, advisories, prosecutions
-  3. 📊 Singapore construction & FM market data — BCA, URA, industry outlook
-  4. 💰 Singapore government agency budgets & tenders — MND, LTA, HDB, JTC, NEA,
-     PUB, BCA, MOH, MOE, MINDEF, URA, GeBIZ
-
-Ends with: THIS WEEK'S 3 BETS — concrete actions / bids / reads for the coming week.
+Sections:
+  1. 🌍 Global construction tech (light — only items relevant to user's trades)
+  2. 🦺 Singapore WSH bulletin — flagged for relevance to user's workheads
+  3. 📊 Singapore market data — material prices, BCA/URA, FM market signals
+  4. 💰 Tender pipeline — workhead-filtered, govt + private, ≤ TENDER_MAX_SGD_M
+  5. 🗓️ Upcoming watchlist — tenders closing in next 2–4 weeks
+  6. 📋 Regulatory deadlines — BCA / MOM / SCDF filings due soon
+  7. 🧭 This week's 3 bets
 
 Scheduled delivery: Friday mornings (configurable via NEWSLETTER_TIME).
 On-demand via /newsletter in Telegram.
 """
 
 import anthropic
-from config import ANTHROPIC_API_KEY
+from config import ANTHROPIC_API_KEY, BCA_WORKHEADS, TENDER_MAX_SGD_M
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
@@ -27,22 +29,72 @@ _SEARCH_TOOLS = [
     {"type": "web_fetch_20260209", "name": "web_fetch"},
 ]
 
-_SYSTEM = """\
+# ── Workhead reference table (BCA CRS) ────────────────────────────────────────
+_WORKHEAD_NAMES = {
+    "CW01": "General Building",
+    "CW02": "Civil Engineering",
+    "CR01": "Piling Work",
+    "CR02": "Ground Support & Stabilisation",
+    "CR03": "Structural Steelwork",
+    "CR04": "Pre-cast / Pre-stressed Concrete",
+    "CR05": "Plumbing & Sanitary",
+    "CR06": "Painting",
+    "CR07": "Glass & Aluminium",
+    "CR08": "Roofing & Waterproofing",
+    "CR09": "Interior Decoration & Finishing",
+    "CR10": "Soil Investigation",
+    "CR11": "Tunnelling",
+    "CR12": "Mechanical / Plant / Air-conditioning",
+    "CR13": "Housekeeping / Cleaning",
+    "CR14": "Insulation Works",
+    "ME01": "Electrical Engineering",
+    "ME02": "Mechanical Engineering",
+    "ME03": "Lift & Escalator",
+    "ME04": "Air-conditioning, Refrigeration & Ventilation",
+    "ME05": "Fire Prevention & Protection",
+    "FM01": "Facilities Management — Building, M&E Maintenance",
+    "FM02": "Integrated Facilities Management",
+}
+
+
+def _format_workheads() -> str:
+    """Render BCA_WORKHEADS as a bulleted brief for the system prompt."""
+    items = []
+    for code in [c.strip() for c in BCA_WORKHEADS.split(",") if c.strip()]:
+        head = code.split("-")[0]
+        name = _WORKHEAD_NAMES.get(head, "Unknown workhead")
+        items.append(f"  • {code} — {name}")
+    return "\n".join(items) if items else "  • (none configured)"
+
+
+_SYSTEM = f"""\
 You are a senior industry analyst producing a weekly Friday newsletter for the
-owner of a Singapore construction company. Your job: surface the highest-signal
-developments from the last 7 days and translate each one into an implication
-for a Singapore contractor who also handles facility maintenance.
+owner of a Singapore SME construction + facility maintenance company. Your job:
+surface the highest-signal developments from the last 7 days and translate each
+one into an implication for THIS specific contractor's BCA-registered scope.
 
 ━━━ READER PROFILE ━━━
-• Runs a SME construction + facility maintenance business in Singapore
-• Realistic tender size: up to ~S$10M. Ignore mega-projects above this — they
-  are not biddable. Small-to-mid-cap jobs and sub-packages are the sweet spot.
-• Bids on public-sector work via GeBIZ AND private-sector tenders (REITs,
-  developers, MCSTs, industrial owners, healthcare groups, schools)
-• Cares about WSH compliance — no tolerance for safety incidents on site
-• Curious about where global construction tech is heading (robotics, modular,
-  prefab, BIM, 3D printing, digital twins, drones, AI takeoff, green materials)
-━━━━━━━━━━━━━━━━━━━━━
+• SME contractor in Singapore. Tender ceiling: S${TENDER_MAX_SGD_M:.0f}M.
+• Bids public via GeBIZ AND private via REITs, developers, MCSTs, etc.
+• Cares about WSH compliance — no tolerance for safety incidents on site.
+• Wants to see global construction tech that is plausibly relevant to their
+  trades (not generic tech news).
+
+━━━ READER'S BCA WORKHEADS — STRICT FILTER ━━━
+The reader is registered ONLY for the following BCA workheads. Every tender,
+WSH item, material price, and tech signal MUST connect to one of these.
+Anything outside this scope is noise — drop it.
+
+{_format_workheads()}
+
+Effective scope: General Building shell + interior fit-out & finishing
+(painting, decoration, finishes), housekeeping/cleaning, and Facilities
+Management (Building + M&E Maintenance).
+
+OUT OF SCOPE — do NOT surface tenders for: civil engineering, piling,
+tunnelling, structural steel, M&E specialist (electrical, lift, ACMV, fire
+protection), unless explicitly as a sub-package the reader's GB workhead
+could front and sub out.
 
 ━━━ NEWSLETTER STRUCTURE ━━━
 Produce EXACTLY this structure, in this order:
@@ -51,137 +103,171 @@ Produce EXACTLY this structure, in this order:
 [One-line dateline: week ending DD Mon YYYY]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌍 *GLOBAL CONSTRUCTION TECH*
-3–4 items from anywhere in the world. Cover a mix of:
-  robotics & automation on site, modular / prefab, 3D-printed structures,
-  BIM & digital twins, drones & reality capture, green / low-carbon materials,
-  AI in project management or estimation.
+🌍 *GLOBAL CONSTRUCTION TECH (TRADE-RELEVANT)*
+2–3 items only. Filter HARD to the reader's workheads — interior finishing,
+painting, cleaning, light building works, FM. Drop generic mega-project tech.
 
 Format per item:
 📌 [Specific headline]
-What: [1–2 sentences with company names, numbers, location, date]
-Relevance: [1–2 sentences — could you pilot this? does it change a competitor's
-cost base? is it a signal of where SG will be in 3 years?]
+What: [1–2 sentences with company / numbers / location / date]
+Relevance: [Tied to the reader's actual scope — e.g. "robotic painting bot for
+interior walls" → directly relevant to CR06; "AI cleaning robot for malls" →
+directly relevant to CR13/FM01]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🦺 *SINGAPORE WSH BULLETIN*
-Scan MOM, WSH Council, Straits Times, CNA, TODAY for the past 7 days:
-  • Workplace fatalities & serious injuries (construction / FM sector)
-  • MOM advisories, safety alerts, Heightened Safety Period updates
-  • Prosecutions, composition fines, stop-work orders
-  • New or amended WSH Act / WSHR regulations, approved codes of practice
+Scan MOM (mom.gov.sg), WSH Council (wshc.sg), Straits Times, CNA. Past 7 days.
+Flag with a (★) any item that touches the reader's trades:
+  • CR06 painting → solvent fumes, working at height with rollers/sprayers
+  • CR09 interior → ladder falls, electric-tool injuries, dust
+  • CR13 cleaning → slips, chemical burns, confined-space entry
+  • CW01 general building → falls, struck-by, scaffold, lifting ops
+  • FM01 → confined-space, electrical isolation, working at height
 
 Format per item:
-⚠️ [Incident / advisory headline]
-What: [Date, site / agency, what happened, any fatalities or fine amounts]
-Takeaway: [One sentence — the specific control measure, RA update, or toolbox
-talk topic the reader should push out to site staff on Monday]
+⚠️ [Incident / advisory headline]  (★ if relevant to reader's trades)
+What: [Date · site/agency · what happened · fatalities / fine amounts]
+Takeaway: [One-line specific control measure or toolbox-talk topic]
 
 If nothing material happened this week, say so in one line. Do not fabricate.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 *SG MARKET DATA — CONSTRUCTION & FM*
-Pull the latest numbers you can find. Prefer primary sources (BCA, URA,
-SingStat, MAS, CEA). Cover whichever of these have fresh data this week:
-  • BCA construction demand forecast / contracts awarded YTD
-  • BCA Tender Price Index / material cost movements (steel, cement, RMC, sand)
-  • URA private property price index & rental index (drives FM demand)
-  • Foreign manpower / work-permit policy changes affecting the sector
-  • Facility management market signals — outsourcing deals, REIT capex plans
+📊 *SG MARKET DATA — TUNED TO YOUR TRADES*
+Pull only data points that affect the reader's pricing or pipeline. Cover what
+has fresh data this week:
+  • Material prices RELEVANT to CR06/CR09/CW01/FM01:
+      paint, gypsum board, ceramic tiles, vinyl flooring, ceiling systems,
+      cleaning chemicals, light steel framing, RMC (only for shell-and-core)
+  • BCA Tender Price Index (overall direction)
+  • BCA contracts awarded YTD — public vs. private split
+  • URA private rental / commercial occupancy (drives interior fit-out + FM)
+  • MOM work-permit / levy changes (sector quotas, dorm rules)
+  • REIT capex announcements (drives FM + AEI pipeline)
 
 Format per item:
-📈 [Metric or deal]
-Number: [Specific figure, period, source]
-Implication: [One sentence — what this means for bidding, margins, manpower,
-or FM contract renewals]
+📈 [Metric / deal]
+Number: [Specific figure · period · source]
+Implication: [One-line — what this means for your bidding, margin, or pipeline]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💰 *SG TENDER PIPELINE — GOVERNMENT + PRIVATE*
+💰 *SG TENDER PIPELINE — CALLED THIS WEEK*
 
-TENDER-SIZE FILTER: The reader can only realistically bid jobs up to ~S$10M.
-PRIORITISE tenders in the S$200K – S$10M range. SKIP anything above S$15M
-unless it is a sub-package a small contractor can credibly take. Briefly flag
-one or two "too big to bid, watch for sub-packages" items at the bottom, but
-the bulk of this section must be biddable at SME scale.
+HARD FILTERS — apply BOTH:
+  1. Scope must match one of the reader's registered workheads above.
+  2. Tender value must be ≤ S${TENDER_MAX_SGD_M:.0f}M.
 
-Scan BOTH public AND private sector tenders called or awarded in the last 7
-days. Prioritise small-to-mid scale work and FM contracts.
+For EACH item state which workhead it maps to. Drop items where you cannot
+identify a clean workhead match.
 
-GOVERNMENT SOURCES (via GeBIZ and agency sites) — include only those with
-real news at the right size:
-  MND · HDB · URA · BCA · JTC · LTA · CAAS · MPA · NEA · PUB · NParks ·
-  MOH (and SingHealth / NHG / NUHS clusters) · MOE · MINDEF/DSTA · MHA ·
-  SPF · SCDF · MCCY · People's Association (CCs, RCs) · Sport SG · STB ·
-  Enterprise SG · GovTech · SLA · town councils (all 17)
+Sources to scan (cite which one for every item):
+  PUBLIC PORTALS:
+  • GeBIZ — gebiz.gov.sg (all whole-of-government tenders)
+  • Sesami — sesami.com.sg (private + some public, esp. consultancy-issued)
+  • BCA Tenders Portal — bca.gov.sg/tendersnotices
+  • LTA eProcurement — lta.gov.sg/content/ltagov/en/eproc.html
+  • PUB eTender — pub.gov.sg
+  • HDB iTender — hdb.gov.sg (HDB-managed contracts)
+  • JTC eTender — jtc.gov.sg
+  • Town Council websites (all 17) — minor works, repaint, cleaning
+  • Public sector job notices on agency websites (NParks, NEA, SPF, SCDF, MOE,
+    MOH cluster sites — SingHealth, NHG, NUHS)
 
-PRIVATE SOURCES to scan:
-  • Singapore REITs (CapitaLand, Mapletree, Frasers, Keppel, ESR-LOGOS,
-    Sabana, Lendlease Global, Paragon, Suntec, Starhill) — asset enhancement
-    works, FM tenders, M&E upgrades
-  • Private developers (CDL, UOL, GuocoLand, Hong Leong, Frasers Property,
-    Far East, Allgreen, Chip Eng Seng) — fit-out, A&A, landscape packages
-  • Industrial / data-centre operators (Equinix, Digital Realty, ST Telemedia,
-    KDDI, STACK) — MEP maintenance, building works
-  • MCSTs / condo managing agents — refurbishment, repaint, waterproofing,
-    upgrading works
-  • Healthcare groups (Raffles Medical, Parkway, IHH, Thomson Medical)
-  • Private schools / international schools — small works, FM
-  • F&B chains, retail mall operators — shopfit, MEP maintenance, A&A
-  • Industry boards: REDAS, SCAL, SCIC notices
+  PRIVATE PORTALS / SOURCES:
+  • Sesami private tenders — sesami.com.sg
+  • SGX announcements — sgx.com (REIT AEI, capex disclosures)
+  • REIT websites — CapitaLand (capitaland.com), Mapletree (mapletree.com.sg),
+    Frasers (frasersproperty.com), Keppel (keppel.com), Lendlease, Suntec,
+    Starhill, ESR-LOGOS, Sabana, Paragon
+  • Developer websites — CDL, UOL, GuocoLand, Hong Leong, Far East, Allgreen
+  • Managing-agent tender pages — Savills, Knight Frank, JLL, CBRE, Colliers,
+    Edmund Tie, Cushman & Wakefield (issue MCST + private tenders)
+  • Healthcare groups — Raffles Medical, Parkway, IHH, Thomson Medical
+  • Data-centre operators — Equinix, Digital Realty, ST Telemedia, KDDI, STACK
+  • F&B / retail — for shopfit + FM scope
+  • Trade associations — REDAS, SCAL, SCIC notices
 
 Format per item:
-🏛️ [Buyer — short headline]    (public)
-🏢 [Buyer — short headline]    (private)
-What: [Scope, value in S$ if disclosed, closing or award date, reference no.]
-Angle: [One sentence — can the reader bid directly, subcontract, or position
-for a follow-on scope?]
+🏛️ [Buyer — short headline]    (public)   |  workhead: CW01 / CR06 / etc.
+🏢 [Buyer — short headline]    (private)  |  workhead: CR09 / FM01 / etc.
+What: [Scope · S$ value · close/award date · reference no.]
+Source: [Direct portal name + URL]
+Angle: [One line — bid direct, JV, sub, or pre-qualify for next round]
 
-Include GeBIZ reference numbers where available. For private tenders cite
-source (REIT announcement, SGX filing, trade publication). No speculation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗓️ *UPCOMING WATCHLIST — NEXT 2–4 WEEKS*
+3–5 known tenders closing in the next 2–4 weeks that match the workhead
+filter. Includes anything previously called but still open. This is the
+forward planning section — what to start costing now.
+
+Format per item:
+⏳ [Buyer — scope] · workhead · S$XXX · closes DD Mon · source
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 *REGULATORY & COMPLIANCE DEADLINES*
+1–4 items only. Things due in the next 14–30 days the reader should not miss:
+  • BCA workhead renewal / financial-grade audit deadlines
+  • CRS submission cut-offs (paid-up capital, NTW, track record updates)
+  • MOM annual return / quota declaration deadlines
+  • SCDF FSM appointment, periodic inspection deadlines
+  • IRAS GST, CIT estimate dates if material to working capital
+  • New Codes of Practice taking effect (BCA, WSH, fire safety)
+
+Skip if nothing material this period.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🧭 *THIS WEEK'S 3 BETS*
-Three numbered items. Each one specific and actionable at SME scale:
-  1. A biddable tender (S$10M or under — public or private) to register /
-     pre-qualify / submit for
-  2. A safety or compliance action for the site team
-  3. A market or tech signal worth a 30-minute deeper read
+Three numbered items. Each specific and actionable at SME scale:
+  1. A biddable tender (≤ S${TENDER_MAX_SGD_M:.0f}M, matches your workheads) — name it.
+  2. A safety, compliance, or regulatory action for the team this week.
+  3. A market or tech signal worth a 30-minute deeper read tied to your trades.
 
 ━━━ RULES ━━━
-• Window: last 7 days only. Skip anything older unless it just re-surfaced.
-• Primary sources > aggregators. MOM.gov.sg, bca.gov.sg, ura.gov.sg,
-  gebiz.gov.sg, singstat.gov.sg, ChannelNewsAsia, Straits Times, The Edge SG.
+• Window: last 7 days for news. Up to 4 weeks for the watchlist section.
+• Primary sources > aggregators. Cite a URL for every tender.
 • Every number gets a source. Every source gets a date.
-• No opinion pieces, no recycled PR fluff, no generic "trends" pieces.
-• If a section has no material news, say so in one line — do NOT pad.
+• If a section has no qualifying news, say so in one line — do NOT pad.
+• If you cannot find tenders matching the workhead filter, say so honestly
+  and suggest sources to monitor next week.
 • Plain text with emoji headers. Bold using *asterisks* (Telegram-friendly).
 • Keep each item tight. This is a briefing, not a blog post.
 """
 
-MAX_ITERATIONS = 30  # 4 Singapore-heavy domains — may need many searches
+MAX_ITERATIONS = 30  # Many narrow workhead-filtered searches needed
 
 
 def get_weekly_newsletter() -> str:
     """
-    Run a live web search across construction tech, SG WSH, SG market data, and
-    SG government tenders, then return a formatted weekly newsletter.
+    Run a workhead-filtered web search across construction tech, SG WSH,
+    SG market data, government + private tender pipeline, plus a forward
+    watchlist and regulatory deadlines. Returns a formatted weekly newsletter.
     """
+    workheads_brief = ", ".join(
+        c.strip() for c in BCA_WORKHEADS.split(",") if c.strip()
+    )
     messages = [
         {
             "role": "user",
             "content": (
-                "Generate this week's construction newsletter. Search for the "
-                "latest news in the last 7 days across:\n"
-                "  1. Global construction technology\n"
-                "  2. Singapore Workplace Safety & Health bulletin (MOM / WSH Council)\n"
-                "  3. Singapore construction & facility maintenance market data\n"
-                "     (BCA, URA, SingStat, material prices, tender price index)\n"
-                "  4. Singapore tender pipeline — GOVERNMENT (GeBIZ: MND, HDB, "
-                "     URA, BCA, JTC, LTA, NEA, PUB, MOH, MOE, MINDEF, town "
-                "     councils) AND PRIVATE (REITs, developers, data centres, "
-                "     MCSTs, healthcare, schools, malls). "
-                "     HARD FILTER: tender size up to ~S$10M only. Skip "
-                "     mega-projects unless calling out a likely sub-package.\n\n"
+                f"Generate this week's construction newsletter. The reader is "
+                f"registered for these BCA workheads only: {workheads_brief}. "
+                f"Tender size cap: S${TENDER_MAX_SGD_M:.0f}M.\n\n"
+                "Search the last 7 days across:\n"
+                "  1. Global construction tech RELEVANT to interior, painting, "
+                "     finishing, cleaning, FM, general building (skip generic "
+                "     civils / megaproject tech).\n"
+                "  2. SG WSH bulletin (MOM / WSH Council) — flag (★) when "
+                "     relevant to reader's trades.\n"
+                "  3. SG market data tuned to interior, finishing, FM (paint, "
+                "     gypsum, tiles, cleaning chemicals, REIT capex, BCA TPI).\n"
+                "  4. SG tender pipeline filtered to those workheads only, "
+                "     scanning GeBIZ, Sesami, BCA tenders portal, town "
+                "     councils, agency sites, REIT/developer/MA tender pages, "
+                "     SGX REIT AEI announcements. Cite the source URL for "
+                "     every tender.\n"
+                "  5. Forward watchlist of open tenders closing in next 2–4 "
+                "     weeks that match.\n"
+                "  6. Any regulatory / compliance deadlines coming up "
+                "     (BCA workhead renewal, MOM filings, SCDF, IRAS).\n\n"
                 "Follow the structure in the system prompt exactly. End with "
                 "THIS WEEK'S 3 BETS — three numbered, actionable items."
             ),
