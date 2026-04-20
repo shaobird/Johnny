@@ -74,6 +74,29 @@ def add_note(note: str) -> str:
     return f"Note saved: {note}"
 
 
+def add_journal(entry: str) -> str:
+    """Append a journal entry from the user. Keeps last 500 entries."""
+    data = load()
+    entries: list = data.setdefault("journal", [])
+    entries.append({"ts": datetime.now().isoformat(), "entry": entry})
+    data["journal"] = entries[-500:]
+    save(data)
+    return f"Journal entry saved ({len(entries)} total)."
+
+
+def get_recent_journal(days: int = 7) -> str:
+    """Return journal entries from the last N days."""
+    from datetime import timedelta
+    data = load()
+    entries = data.get("journal", [])
+    cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+    recent = [e for e in entries if e.get("ts", "") >= cutoff]
+    if not recent:
+        return f"No journal entries in the last {days} days."
+    lines = [f"[{e['ts'][:16].replace('T', ' ')}] {e['entry']}" for e in recent]
+    return "\n\n".join(lines)
+
+
 def get_context() -> str:
     """
     Return a compact text summary of everything Johnny knows about the user.

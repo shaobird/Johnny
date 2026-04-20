@@ -8,14 +8,10 @@ Commands:
   /fitness  — fitness summary only
   /news     — Forex Factory high-impact events only
   /intel    — daily intelligence briefing (AI, construction, forex, HYROX)
+  /journal  — save a journal entry (e.g. /journal Today was tough but productive)
+  /reflect  — Johnny reflects on your last 7 days of journal entries
 
 Any other text is forwarded to Johnny as a freeform message.
-
-Setup:
-  1. Message @BotFather on Telegram → /newbot → copy the token
-  2. Add TELEGRAM_BOT_TOKEN to .env
-  3. Start the bot, then message it once — Johnny will reply with your chat ID.
-     Copy that ID into TELEGRAM_CHAT_ID in .env so the scheduler can DM you.
 """
 
 import asyncio
@@ -107,6 +103,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     history.append({"role": "assistant", "content": reply})
     _history[user_id] = history[-_MAX_HISTORY:]
 
+    await _send_long(update, reply)
+
+
+# ── Journal handlers ──────────────────────────────────────────────────────────
+
+async def cmd_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    entry = " ".join(context.args) if context.args else ""
+    if not entry:
+        await update.message.reply_text(
+            "Usage: /journal <your entry>\n"
+            "Example: /journal Had a solid Push session. Feeling focused today."
+        )
+        return
+    mem.add_journal(entry)
+    reply = johnny.chat(
+        f"The user just journalled: \"{entry}\"\n\n"
+        "Acknowledge it briefly (1-2 sentences max). If there's a pattern or insight worth noting, "
+        "mention it. Otherwise just confirm it's saved. No filler."
+    )
+    await _send_long(update, reply)
+
+
+async def cmd_reflect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("📔 Reading your journal...")
+    entries = mem.get_recent_journal(days=7)
+    reply = johnny.chat(
+        f"Here are the user's journal entries from the last 7 days:\n\n{entries}\n\n"
+        "Give a sharp reflection (max 150 words):\n"
+        "• What patterns do you notice?\n"
+        "• What's going well?\n"
+        "• What needs attention?\n"
+        "• One clear recommendation for the week ahead.\n"
+        "Be direct. No filler."
+    )
     await _send_long(update, reply)
 
 
@@ -258,6 +288,8 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("fitness", cmd_fitness))
     app.add_handler(CommandHandler("news", cmd_news))
     app.add_handler(CommandHandler("intel", cmd_intel))
+    app.add_handler(CommandHandler("journal", cmd_journal))
+    app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     return app
