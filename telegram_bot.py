@@ -48,15 +48,17 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id
     await update.message.reply_text(
         f"👋 Hey, I'm Johnny — your personal AI chief of staff.\n\n"
-        f"Your chat ID is: {chat_id}\n"
-        f"(Add this as TELEGRAM_CHAT_ID in .env for morning briefings)\n\n"
-        "Commands:\n"
+        f"Your chat ID is: {chat_id}\n\n"
+        "📋 COMMANDS\n"
         "  /briefing — full daily briefing\n"
         "  /calendar — today's meetings\n"
         "  /fitness  — workout summary\n"
         "  /news     — Forex high-impact events\n"
-        "  /intel    — daily intelligence briefing\n\n"
-        "Or just talk to me normally."
+        "  /intel    — AI, construction & macro briefing\n"
+        "  /journal  — log a journal entry\n"
+        "              e.g. /journal Good Push session today\n"
+        "  /reflect  — Johnny reflects on your last 7 days\n\n"
+        "Or just talk to me normally — I'll remember the conversation."
     )
 
 
@@ -292,4 +294,19 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
+
+    # Register command menu so they appear when user taps "/"
+    app.post_init = _set_commands
     return app
+
+
+async def _set_commands(app: Application) -> None:
+    await app.bot.set_my_commands([
+        ("briefing", "Full daily briefing"),
+        ("calendar", "Today's meetings"),
+        ("fitness",  "Workout summary"),
+        ("news",     "Forex high-impact events"),
+        ("intel",    "AI, construction & macro briefing"),
+        ("journal",  "Log a journal entry"),
+        ("reflect",  "Reflect on last 7 days"),
+    ])
