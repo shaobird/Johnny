@@ -34,3 +34,6 @@ MRKTEDGE_PASSWORD = os.getenv("MRKTEDGE_PASSWORD")
 
 # OpenAI — Whisper voice transcription
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Gemini — web search / intel layer
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

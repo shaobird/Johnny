@@ -33,69 +33,103 @@
   },
 
   "training_program": {
-    "name": "PPL + 3 Runs Hybrid",
-    "philosophy": "Push/Pull/Legs placed so leg day never ruins tempo or long runs. Upper body can push harder. Legs always leave 2 reps in reserve.",
+    "name": "Run-Dominant PPL Hybrid — Half Marathon + HYROX",
+    "philosophy": "Run-first structure with 5 hours/week running volume. Gym supports running, never competes with it. Legs always 2 reps in reserve. Upper body can push hard.",
     "weekly_schedule": {
       "MON": {
-        "type": "GYM",
-        "session": "Push — Upper Body",
-        "exercises": ["Bench press", "Incline DB press", "Shoulder press", "Triceps work", "Core"],
-        "notes": "Safe day — no interference with running. Can push hard."
+        "type": "GYM + RUN",
+        "session": "Push + Zone 2 (25 min)",
+        "gym": {
+          "exercises": ["Incline DB press", "Flat DB press", "Seated DB shoulder press", "Dips", "Cable fly / pec deck"],
+          "progression": "Hit 12 reps both sets → increase weight next session"
+        },
+        "run": {
+          "duration_min": 25,
+          "zone": "Zone 2",
+          "hr_bpm": "120–139",
+          "purpose": "Flush legs after weekend workload"
+        }
       },
       "TUE": {
         "type": "RUN",
-        "session": "Easy Run — Zone 2",
-        "distance_km": "5–7",
-        "target_hr_bpm": "130–145",
-        "target_pace": "Comfortable and controlled (around 6:20–6:40/km based on current fitness)",
-        "purpose": "Build aerobic base"
+        "session": "Easy Run — Zone 2 (45 min)",
+        "duration_min": 45,
+        "zone": "Zone 2",
+        "effort": "Conversational",
+        "purpose": "Primary aerobic builder"
       },
       "WED": {
-        "type": "GYM",
-        "session": "Pull — Upper Body",
-        "exercises": ["Pull-ups / Lat pulldown", "Barbell rows", "Face pulls", "Biceps", "Rear delts"],
-        "notes": "Supports posture and running economy. Can push hard."
+        "type": "RUN",
+        "session": "Zone 4 Intervals (30 min total)",
+        "structure": "10 min warm-up → 5 × 2 min Zone 4 → 2 min easy recoveries → cooldown",
+        "purpose": "Speed reserve for 1:45 half marathon race pace",
+        "notes": "No gym today — important recovery spacing"
       },
       "THU": {
-        "type": "RUN",
-        "session": "Tempo Run",
-        "distance_km": "5–7 total",
-        "structure": "1km easy warmup → 3–4km at tempo pace → cooldown",
-        "purpose": "Improve race pace ability"
+        "type": "GYM + RUN",
+        "session": "Legs + Zone 2 (25 min)",
+        "gym": {
+          "exercises": ["Squats", "Romanian deadlift", "DB lunges", "Calf raises"],
+          "notes": "CRITICAL: Leave 2 reps in reserve. Keeps running performance strong."
+        },
+        "run": {
+          "duration_min": 25,
+          "zone": "Zone 2",
+          "effort": "Very relaxed"
+        }
       },
       "FRI": {
-        "type": "GYM",
-        "session": "Legs — Runner-Friendly Strength",
-        "exercises": ["Squats OR leg press", "Romanian deadlift", "Walking lunges", "Hamstring curl", "Calf raises"],
-        "notes": "CRITICAL RULE: Leave 2 reps in reserve. Do not max out. Legs must be fresh enough for Saturday intervals."
+        "type": "GYM + RUN",
+        "session": "Pull + Zone 2 (23 min)",
+        "gym": {
+          "exercises": ["DB / BB rows", "Pull-ups or lat pulldown", "BB curls", "Lat pullover"]
+        },
+        "run": {
+          "duration_min": 23,
+          "zone": "Zone 2",
+          "notes": "Optional if fatigue high"
+        }
       },
       "SAT": {
         "type": "RUN",
-        "session": "Intervals",
-        "structure": "400m repeats OR 800m repeats",
-        "purpose": "Build speed and VO2 max",
-        "notes": "Keep existing interval session structure"
+        "session": "Easy Run — Zone 2 (45 min)",
+        "duration_min": 45,
+        "zone": "Zone 2",
+        "purpose": "Recovery-support run, same effort as Tuesday"
       },
       "SUN": {
         "type": "RUN",
-        "session": "Long Run",
-        "distance_km": "8–12 (build progressively)",
-        "pace": "Slow and conversational",
-        "purpose": "Build half marathon engine"
+        "session": "Zone 3 Endurance (1h22)",
+        "structure": "40 min Zone 2 → 30 min Zone 3 → 12 min steady finish",
+        "purpose": "Most important session for race durability"
       }
     },
     "weekly_targets": {
       "gym_sessions": 3,
-      "runs": 3,
-      "run_types_required": ["Zone 2 easy", "Tempo", "Intervals or Long run"]
+      "total_run_minutes": 300,
+      "run_sessions": 6,
+      "run_breakdown": {
+        "MON": "25 min Zone 2",
+        "TUE": "45 min Zone 2",
+        "WED": "30 min Zone 4 intervals",
+        "THU": "25 min Zone 2",
+        "FRI": "23 min Zone 2",
+        "SAT": "45 min Zone 2",
+        "SUN": "82 min Zone 2/3"
+      }
     },
     "key_rules": [
-      "Leg day = strength support, NOT bodybuilding destruction",
-      "Never train legs to failure — always 2 reps in reserve",
-      "Upper body can be pushed harder",
-      "No heavy legs before tempo or interval runs",
-      "Leg day (FRI) is always 1 day before intervals (SAT) — keep volume moderate"
-    ]
+      "Legs = strength support only. Never train to failure. Always 2 reps in reserve.",
+      "Upper body can be pushed hard — hit 12 reps both sets then increase weight",
+      "Zone 2 HR target: 120–139 bpm",
+      "Sunday long run is the most important session — protect it",
+      "Wednesday Zone 4 intervals build speed reserve for 1:45 half marathon pace",
+      "No gym on Wednesday — recovery spacing critical"
+    ],
+    "race_targets": {
+      "half_marathon": "1:45",
+      "hyrox": "Complete and compete"
+    }
   },
 
   "run_baselines": {

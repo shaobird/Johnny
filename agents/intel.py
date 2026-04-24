@@ -1,28 +1,18 @@
 """
 Intel Agent — Daily Intelligence Briefing
-Uses Claude + live web search to surface high-signal news across 4 domains,
-then applies your personal context to explain what each signal means for
-your construction business, forex trading, and hybrid training.
+Uses Gemini (Google Search grounding) to surface high-signal news across 4 domains,
+then applies personal context to explain what each signal means.
 
-Inspired by the briefing format: headline → what happened → why it matters for you.
-
-Runs daily as part of the morning briefing, or on demand via /intel.
+Gemini's native Google Search gives real-time, comprehensive results at no cost
+on the free tier (1,500 requests/day).
 """
 
-import anthropic
-from config import ANTHROPIC_API_KEY
+import google.generativeai as genai
+from config import GEMINI_API_KEY, ANTHROPIC_API_KEY
 
-_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-
-_SEARCH_TOOLS = [
-    {"type": "web_search_20260209", "name": "web_search"},
-    {"type": "web_fetch_20260209", "name": "web_fetch"},
-]
-
-_SYSTEM = """\
-You are a high-signal intelligence analyst and strategic advisor. Your job is to
-find the most important recent developments across 4 domains and explain exactly
-what each one means for a specific person.
+_PROMPT = """\
+You are a high-signal intelligence analyst briefing a specific person. Find the most
+important recent developments across 4 domains and explain exactly what each means for them.
 
 ━━━ WHO YOU ARE BRIEFING ━━━
 • Runs a construction business (documentation, compliance, coordination, procurement)
@@ -39,26 +29,24 @@ Why it matters for you: [1–3 sentences — tied directly to their construction
   forex trading, training, or AI interest. Never generic.]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━ DOMAINS TO COVER ━━━
-Search each one and find 2–3 genuinely high-signal items:
+Search for the latest high-signal news in each of these 4 domains and find 2–3 items each:
 
 🤖 AI & AUTOMATION
-  Focus: AI agents, frontier model releases, enterprise automation deployment,
-  agentic systems in business workflows, AI infrastructure (chips, compute, funding)
+Focus: AI agents, frontier model releases, enterprise automation deployment,
+agentic systems in business workflows, AI infrastructure (chips, compute, funding)
 
 🏗️ CONSTRUCTION & PROPERTY
-  Focus: Construction industry automation, building material costs, regulation
-  changes, property market shifts, workflow tech for contractors/builders
+Focus: Construction industry automation, building material costs, regulation
+changes, property market shifts, workflow tech for contractors/builders
 
 💱 FOREX & MACRO
-  Focus: Central bank decisions and signals (Fed, ECB, BOJ, RBA, BOE),
-  economic data releases (CPI, NFP, GDP), USD strength/weakness trends,
-  anything that will move currency pairs this week
+Focus: Central bank decisions and signals (Fed, ECB, BOJ, RBA, BOE),
+economic data releases (CPI, NFP, GDP), USD strength/weakness trends,
+anything that will move currency pairs this week
 
 🏃 HYROX & ENDURANCE
-  Focus: HYROX race news and format updates, hybrid training science,
-  half marathon preparation research, strength+endurance performance studies
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Focus: HYROX race news and format updates, hybrid training science,
+half marathon preparation research, strength+endurance performance studies
 
 ━━━ END WITH ━━━
 🧭 TODAY'S 3 SIGNALS
@@ -68,61 +56,65 @@ Three numbered takeaways — specific things to act on or watch today.
 • Only include genuinely new, high-signal items from the last 48 hours
 • Skip opinion pieces, recycled news, and low-signal fluff
 • Be specific — name companies, currencies, percentages, dates
-• Apply context ruthlessly — "this matters for YOUR construction contracts" not
-  "this matters for business owners generally"
+• Apply context ruthlessly — never generic advice
 • If a domain has no significant news today, say so in one line and move on\
 """
-
-MAX_ITERATIONS = 25  # More iterations needed — multiple web searches across 4 domains
 
 
 def get_intel_briefing() -> str:
     """
-    Run a live web search across all 4 domains and return a formatted
+    Run a live Google Search via Gemini and return a formatted
     daily intelligence briefing with personal context applied.
+    Falls back to Claude web search if Gemini is unavailable.
     """
-    messages = [
-        {
-            "role": "user",
-            "content": (
-                "Give me today's full intelligence briefing. "
-                "Search for the latest high-signal news in each domain: "
-                "AI & automation, construction industry, forex & macro markets, "
-                "and HYROX / endurance sport. "
-                "For each item explain specifically why it matters given my context: "
-                "construction business, forex trading evenings, hybrid athlete "
-                "training for half marathon + HYROX. "
-                "End with 3 specific signals or actions for today."
-            ),
-        }
+    if GEMINI_API_KEY:
+        try:
+            return _gemini_search()
+        except Exception as e:
+            print(f"[Intel] Gemini failed ({e}), falling back to Claude...")
+
+    return _claude_search()
+
+
+def _gemini_search() -> str:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        tools="google_search_retrieval",
+    )
+    response = model.generate_content(_PROMPT)
+    return response.text
+
+
+def _claude_search() -> str:
+    import anthropic
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    _SEARCH_TOOLS = [
+        {"type": "web_search_20260209", "name": "web_search"},
+        {"type": "web_fetch_20260209",  "name": "web_fetch"},
     ]
 
-    response: anthropic.types.Message | None = None
+    messages = [{"role": "user", "content": _PROMPT}]
+    response = None
 
-    for _ in range(MAX_ITERATIONS):
-        response = _client.messages.create(
+    for _ in range(25):
+        response = client.messages.create(
             model="claude-opus-4-6",
             max_tokens=8096,
             thinking={"type": "adaptive"},
-            system=_SYSTEM,
             tools=_SEARCH_TOOLS,
             messages=messages,
         )
-
         if response.stop_reason == "end_turn":
-            return _extract_text(response)
-
-        # Server-side search tools hit their iteration limit — re-send to continue
+            break
         if response.stop_reason == "pause_turn":
             messages.append({"role": "assistant", "content": response.content})
             continue
+        break
 
-        break  # unexpected stop reason
-
-    return _extract_text(response) if response else "Intel briefing unavailable."
-
-
-def _extract_text(response: anthropic.types.Message) -> str:
+    if not response:
+        return "Intel briefing unavailable."
     return "\n".join(b.text for b in response.content if b.type == "text")
 
 
