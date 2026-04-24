@@ -19,10 +19,17 @@ Scheduled delivery: Friday mornings (configurable via NEWSLETTER_TIME).
 On-demand via /newsletter in Telegram.
 """
 
+import base64
+import glob
+import os
+
 import anthropic
 from config import ANTHROPIC_API_KEY, BCA_WORKHEADS, TENDER_MAX_SGD_M
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+# Drop the weekly ST Classifieds PDF here. The agent reads anything it finds.
+ST_CLASSIFIEDS_DIR = "inbox/st_classifieds"
 
 _SEARCH_TOOLS = [
     {"type": "web_search_20260209", "name": "web_search"},
@@ -150,6 +157,32 @@ Number: [Specific figure · period · source]
 Implication: [One-line — what this means for your bidding, margin, or pipeline]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📰 *ST CLASSIFIEDS — FRIDAY TENDER NOTICES*
+If one or more PDF documents are attached to this request, they are the week's
+Straits Times Classifieds (Notices / Tender Notice section). Read them page
+by page and extract EVERY tender or pre-qualification notice that matches the
+reader's registered workheads. Drop everything else (legal notices, insolvency,
+AGMs, job ads, jobs, F&B ads, etc.).
+
+For each matching notice, extract:
+  • Issuing body (town council, agency, association, MCST)
+  • Project / scope
+  • Eligibility / workhead + financial grade requirement
+  • Closing date & time
+  • Tender document fee or deposit, if stated
+  • Collection / contact details (office address, email, ref no.)
+
+Format per item:
+📰 [Issuer — short headline]   |  workhead: CR06 / CR09 / CR13 / CW01 / FM01
+What: [Scope summary · eligibility · fee if any]
+Closing: [DD Mon YYYY, time if stated]
+📍 Where to see: [ST Classifieds, <date>, page ref · or contact: <email/ref>]
+Angle: [One line — fit, readiness, competitive context]
+
+If no matching tenders appear in the PDFs (or no PDF was supplied), say so in
+one line and move on. Do NOT invent items.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💰 *SG TENDER PIPELINE — CALLED THIS WEEK*
 
 HARD FILTERS — apply BOTH:
@@ -242,44 +275,82 @@ Three numbered items. Each specific and actionable at SME scale:
 MAX_ITERATIONS = 30  # Many narrow workhead-filtered searches needed
 
 
+def _load_st_classifieds() -> list[dict]:
+    """
+    Read any PDFs dropped into inbox/st_classifieds/ and return them as
+    Anthropic document content blocks so Claude can parse them natively.
+    Returns an empty list if the folder is missing or empty.
+    """
+    if not os.path.isdir(ST_CLASSIFIEDS_DIR):
+        return []
+
+    blocks: list[dict] = []
+    for path in sorted(glob.glob(os.path.join(ST_CLASSIFIEDS_DIR, "*.pdf"))):
+        with open(path, "rb") as f:
+            data = base64.standard_b64encode(f.read()).decode("utf-8")
+        blocks.append({
+            "type": "document",
+            "source": {
+                "type": "base64",
+                "media_type": "application/pdf",
+                "data": data,
+            },
+            "title": os.path.basename(path),
+        })
+    return blocks
+
+
 def get_weekly_newsletter() -> str:
     """
     Run a workhead-filtered web search across construction tech, SG WSH,
     SG market data, government + private tender pipeline, plus a forward
-    watchlist and regulatory deadlines. Returns a formatted weekly newsletter.
+    watchlist, regulatory deadlines, and any ST Classifieds PDFs dropped
+    into inbox/st_classifieds/. Returns a formatted weekly newsletter.
     """
     workheads_brief = ", ".join(
         c.strip() for c in BCA_WORKHEADS.split(",") if c.strip()
     )
-    messages = [
-        {
-            "role": "user",
-            "content": (
-                f"Generate this week's construction newsletter. The reader is "
-                f"registered for these BCA workheads only: {workheads_brief}. "
-                f"Tender size cap: S${TENDER_MAX_SGD_M:.0f}M.\n\n"
-                "Search the last 7 days across:\n"
-                "  1. Global construction tech RELEVANT to interior, painting, "
-                "     finishing, cleaning, FM, general building (skip generic "
-                "     civils / megaproject tech).\n"
-                "  2. SG WSH bulletin (MOM / WSH Council) — flag (★) when "
-                "     relevant to reader's trades.\n"
-                "  3. SG market data tuned to interior, finishing, FM (paint, "
-                "     gypsum, tiles, cleaning chemicals, REIT capex, BCA TPI).\n"
-                "  4. SG tender pipeline filtered to those workheads only, "
-                "     scanning GeBIZ, Sesami, BCA tenders portal, town "
-                "     councils, agency sites, REIT/developer/MA tender pages, "
-                "     SGX REIT AEI announcements. Cite the source URL for "
-                "     every tender.\n"
-                "  5. Forward watchlist of open tenders closing in next 2–4 "
-                "     weeks that match.\n"
-                "  6. Any regulatory / compliance deadlines coming up "
-                "     (BCA workhead renewal, MOM filings, SCDF, IRAS).\n\n"
-                "Follow the structure in the system prompt exactly. End with "
-                "THIS WEEK'S 3 BETS — three numbered, actionable items."
-            ),
-        }
-    ]
+
+    st_blocks = _load_st_classifieds()
+    st_note = (
+        f"\n{len(st_blocks)} ST Classifieds PDF(s) attached — parse them for "
+        "the 📰 ST CLASSIFIEDS section and fold any matching tenders into "
+        "the tender pipeline too."
+        if st_blocks
+        else "\nNo ST Classifieds PDF found this week — skip that section "
+        "with a one-line note."
+    )
+
+    user_content: list[dict] = list(st_blocks) + [{
+        "type": "text",
+        "text": (
+            f"Generate this week's construction newsletter. The reader is "
+            f"registered for these BCA workheads only: {workheads_brief}. "
+            f"Tender size cap: S${TENDER_MAX_SGD_M:.0f}M.{st_note}\n\n"
+            "Search the last 7 days across:\n"
+            "  1. Global construction tech RELEVANT to interior, painting, "
+            "     finishing, cleaning, FM, general building (skip generic "
+            "     civils / megaproject tech).\n"
+            "  2. SG WSH bulletin (MOM / WSH Council) — flag (★) when "
+            "     relevant to reader's trades.\n"
+            "  3. SG market data tuned to interior, finishing, FM (paint, "
+            "     gypsum, tiles, cleaning chemicals, REIT capex, BCA TPI).\n"
+            "  4. ST Classifieds PDF(s) if attached — extract matching "
+            "     tender notices.\n"
+            "  5. SG tender pipeline filtered to those workheads only, "
+            "     scanning GeBIZ, Sesami, BCA tenders portal, town "
+            "     councils, agency sites, REIT/developer/MA tender pages, "
+            "     SGX REIT AEI announcements.\n"
+            "  6. Forward watchlist of open tenders closing in next 2–4 "
+            "     weeks that match.\n"
+            "  7. Any regulatory / compliance deadlines coming up "
+            "     (BCA workhead renewal, MOM filings, SCDF, IRAS).\n\n"
+            "Follow the structure in the system prompt exactly. End with "
+            "THIS WEEK'S 3 BETS — three numbered, actionable items."
+        ),
+    }]
+
+    messages = [{"role": "user", "content": user_content}]
 
     response: anthropic.types.Message | None = None
 

@@ -31,3 +31,7 @@ venv/
 
 # OS
 .DS_Store
+
+# ST Classifieds PDFs dropped weekly — large, not for git
+inbox/st_classifieds/*.pdf
+inbox/st_classifieds/*.PDF
