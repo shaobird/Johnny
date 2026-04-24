@@ -122,42 +122,10 @@ interior walls" → directly relevant to CR06; "AI cleaning robot for malls" →
 directly relevant to CR13/FM01]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🦺 *SINGAPORE WSH BULLETIN*
-Scan MOM (mom.gov.sg), WSH Council (wshc.sg), Straits Times, CNA. Past 7 days.
-Flag with a (★) any item that touches the reader's trades:
-  • CR06 painting → solvent fumes, working at height with rollers/sprayers
-  • CR09 interior → ladder falls, electric-tool injuries, dust
-  • CR13 cleaning → slips, chemical burns, confined-space entry
-  • CW01 general building → falls, struck-by, scaffold, lifting ops
-  • FM01 → confined-space, electrical isolation, working at height
-
-Format per item:
-⚠️ [Incident / advisory headline]  (★ if relevant to reader's trades)
-What: [Date · site/agency · what happened · fatalities / fine amounts]
-Takeaway: [One-line specific control measure or toolbox-talk topic]
-
-If nothing material happened this week, say so in one line. Do not fabricate.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 *SG MARKET DATA — TUNED TO YOUR TRADES*
-Pull only data points that affect the reader's pricing or pipeline. Cover what
-has fresh data this week:
-  • Material prices RELEVANT to CR06/CR09/CW01/FM01:
-      paint, gypsum board, ceramic tiles, vinyl flooring, ceiling systems,
-      cleaning chemicals, light steel framing, RMC (only for shell-and-core)
-  • BCA Tender Price Index (overall direction)
-  • BCA contracts awarded YTD — public vs. private split
-  • URA private rental / commercial occupancy (drives interior fit-out + FM)
-  • MOM work-permit / levy changes (sector quotas, dorm rules)
-  • REIT capex announcements (drives FM + AEI pipeline)
-
-Format per item:
-📈 [Metric / deal]
-Number: [Specific figure · period · source]
-Implication: [One-line — what this means for your bidding, margin, or pipeline]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💰 *SG TENDER PIPELINE — CALLED THIS WEEK*
+
+(Moved up — placed directly after Trends to Watch so the most actionable
+content is near the top of the newsletter.)
 
 This single section consolidates ALL tenders — from live web search AND from
 any ST Classifieds PDF attached to this request. Merge them into one list.
@@ -222,6 +190,41 @@ forward planning section — what to start costing now.
 Format per item:
 ⏳ [Buyer — scope] · workhead · S$XXX · closes DD Mon
 📍 [Short "where to see" label]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🦺 *SINGAPORE WSH BULLETIN*
+Scan MOM (mom.gov.sg), WSH Council (wshc.sg), Straits Times, CNA. Past 7 days.
+Flag with a (★) any item that touches the reader's trades:
+  • CR06 painting → solvent fumes, working at height with rollers/sprayers
+  • CR09 interior → ladder falls, electric-tool injuries, dust
+  • CR13 cleaning → slips, chemical burns, confined-space entry
+  • CW01 general building → falls, struck-by, scaffold, lifting ops
+  • FM01 → confined-space, electrical isolation, working at height
+
+Format per item:
+⚠️ [Incident / advisory headline]  (★ if relevant to reader's trades)
+What: [Date · site/agency · what happened · fatalities / fine amounts]
+Takeaway: [One-line specific control measure or toolbox-talk topic]
+
+If nothing material happened this week, say so in one line. Do not fabricate.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 *SG MARKET DATA — TUNED TO YOUR TRADES*
+Pull only data points that affect the reader's pricing or pipeline. Cover what
+has fresh data this week:
+  • Material prices RELEVANT to CR06/CR09/CW01/FM01:
+      paint, gypsum board, ceramic tiles, vinyl flooring, ceiling systems,
+      cleaning chemicals, light steel framing, RMC (only for shell-and-core)
+  • BCA Tender Price Index (overall direction)
+  • BCA contracts awarded YTD — public vs. private split
+  • URA private rental / commercial occupancy (drives interior fit-out + FM)
+  • MOM work-permit / levy changes (sector quotas, dorm rules)
+  • REIT capex announcements (drives FM + AEI pipeline)
+
+Format per item:
+📈 [Metric / deal]
+Number: [Specific figure · period · source]
+Implication: [One-line — what this means for your bidding, margin, or pipeline]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 *REGULATORY & COMPLIANCE DEADLINES*
