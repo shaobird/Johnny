@@ -79,7 +79,7 @@ def get_intel_briefing() -> str:
 def _gemini_search() -> str:
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
+        model_name="gemini-2.5-pro",
         tools="google_search_retrieval",
     )
     response = model.generate_content(_PROMPT)
