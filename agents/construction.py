@@ -157,33 +157,16 @@ Number: [Specific figure · period · source]
 Implication: [One-line — what this means for your bidding, margin, or pipeline]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📰 *ST CLASSIFIEDS — FRIDAY TENDER NOTICES*
-If one or more PDF documents are attached to this request, they are the week's
-Straits Times Classifieds (Notices / Tender Notice section). Read them page
-by page and extract EVERY tender or pre-qualification notice that matches the
-reader's registered workheads. Drop everything else (legal notices, insolvency,
-AGMs, job ads, jobs, F&B ads, etc.).
-
-For each matching notice, extract:
-  • Issuing body (town council, agency, association, MCST)
-  • Project / scope
-  • Eligibility / workhead + financial grade requirement
-  • Closing date & time
-  • Tender document fee or deposit, if stated
-  • Collection / contact details (office address, email, ref no.)
-
-Format per item:
-📰 [Issuer — short headline]   |  workhead: CR06 / CR09 / CR13 / CW01 / FM01
-What: [Scope summary · eligibility · fee if any]
-Closing: [DD Mon YYYY, time if stated]
-📍 Where to see: [ST Classifieds, <date>, page ref · or contact: <email/ref>]
-Angle: [One line — fit, readiness, competitive context]
-
-If no matching tenders appear in the PDFs (or no PDF was supplied), say so in
-one line and move on. Do NOT invent items.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💰 *SG TENDER PIPELINE — CALLED THIS WEEK*
+
+This single section consolidates ALL tenders — from live web search AND from
+any ST Classifieds PDF attached to this request. Merge them into one list.
+
+IF a PDF is attached: read it page by page, extract every tender / pre-Q
+notice matching the reader's workheads, and fold those items in alongside
+web-search results. Drop legal notices, insolvency, AGMs, job ads, F&B ads.
+Tag each ST Classifieds item with 📰 so the reader can see it came from the
+print edition.
 
 HARD FILTERS — apply BOTH:
   1. Scope must match one of the reader's registered workheads above.
@@ -222,10 +205,12 @@ Sources to scan (cite which one for every item):
 Format per item:
 🏛️ [Buyer — short headline]    (public)   |  workhead: CW01 / CR06 / etc.
 🏢 [Buyer — short headline]    (private)  |  workhead: CR09 / FM01 / etc.
+📰 [Buyer — short headline]    (ST Classifieds) |  workhead: ...
 What: [Scope · S$ value · close/award date · reference no.]
 📍 Where to see: [Short label — e.g. "GeBIZ (search by ref)",
                   "Aljunied-Hougang TC website", "SGX REIT announcements",
-                  "Mapletree investor site", "Sesami", "Savills tender page"]
+                  "Mapletree investor site", "Sesami", "Savills tender page",
+                  "ST Classifieds <date>, p.C11" for print-edition items]
 Angle: [One line — bid direct, JV, sub, or pre-qualify for next round]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
