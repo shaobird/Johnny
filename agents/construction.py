@@ -110,86 +110,27 @@ Produce EXACTLY this structure, in this order:
 [One-line dateline: week ending DD Mon YYYY]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌍 *GLOBAL CONSTRUCTION TECH (TRADE-RELEVANT)*
-2–3 items only. Filter HARD to the reader's workheads — interior finishing,
+🌍 *CONSTRUCTION TECH — TOP 5 THIS WEEK*
+Exactly 5 items. Filter HARD to the reader's workheads — interior finishing,
 painting, cleaning, light building works, FM. Drop generic mega-project tech.
 
-Format per item:
-📌 [Specific headline]
-What: [1–2 sentences with company / numbers / location / date]
-Relevance: [Tied to the reader's actual scope — e.g. "robotic painting bot for
-interior walls" → directly relevant to CR06; "AI cleaning robot for malls" →
-directly relevant to CR13/FM01]
+Each item must be ELABORATED, not a one-liner. Give enough depth that a site
+manager reading on the MRT understands what it is, why it matters, and where
+to dig deeper.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💰 *SG TENDER PIPELINE — CALLED THIS WEEK*
-
-(Moved up — placed directly after Trends to Watch so the most actionable
-content is near the top of the newsletter.)
-
-This single section consolidates ALL tenders — from live web search AND from
-any ST Classifieds PDF attached to this request. Merge them into one list.
-
-IF a PDF is attached: read it page by page, extract every tender / pre-Q
-notice matching the reader's workheads, and fold those items in alongside
-web-search results. Drop legal notices, insolvency, AGMs, job ads, F&B ads.
-Tag each ST Classifieds item with 📰 so the reader can see it came from the
-print edition.
-
-HARD FILTERS — apply BOTH:
-  1. Scope must match one of the reader's registered workheads above.
-  2. Tender value must be ≤ S${TENDER_MAX_SGD_M:.0f}M.
-
-For EACH item state which workhead it maps to. Drop items where you cannot
-identify a clean workhead match.
-
-Sources to scan (cite which one for every item):
-  PUBLIC PORTALS:
-  • GeBIZ — gebiz.gov.sg (all whole-of-government tenders)
-  • Sesami — sesami.com.sg (private + some public, esp. consultancy-issued)
-  • BCA Tenders Portal — bca.gov.sg/tendersnotices
-  • LTA eProcurement — lta.gov.sg/content/ltagov/en/eproc.html
-  • PUB eTender — pub.gov.sg
-  • HDB iTender — hdb.gov.sg (HDB-managed contracts)
-  • JTC eTender — jtc.gov.sg
-  • Town Council websites (all 17) — minor works, repaint, cleaning
-  • Public sector job notices on agency websites (NParks, NEA, SPF, SCDF, MOE,
-    MOH cluster sites — SingHealth, NHG, NUHS)
-
-  PRIVATE PORTALS / SOURCES:
-  • Sesami private tenders — sesami.com.sg
-  • SGX announcements — sgx.com (REIT AEI, capex disclosures)
-  • REIT websites — CapitaLand (capitaland.com), Mapletree (mapletree.com.sg),
-    Frasers (frasersproperty.com), Keppel (keppel.com), Lendlease, Suntec,
-    Starhill, ESR-LOGOS, Sabana, Paragon
-  • Developer websites — CDL, UOL, GuocoLand, Hong Leong, Far East, Allgreen
-  • Managing-agent tender pages — Savills, Knight Frank, JLL, CBRE, Colliers,
-    Edmund Tie, Cushman & Wakefield (issue MCST + private tenders)
-  • Healthcare groups — Raffles Medical, Parkway, IHH, Thomson Medical
-  • Data-centre operators — Equinix, Digital Realty, ST Telemedia, KDDI, STACK
-  • F&B / retail — for shopfit + FM scope
-  • Trade associations — REDAS, SCAL, SCIC notices
-
-Format per item:
-🏛️ [Buyer — short headline]    (public)   |  workhead: CW01 / CR06 / etc.
-🏢 [Buyer — short headline]    (private)  |  workhead: CR09 / FM01 / etc.
-📰 [Buyer — short headline]    (ST Classifieds) |  workhead: ...
-What: [Scope · S$ value · close/award date · reference no.]
-📍 Where to see: [Short label — e.g. "GeBIZ (search by ref)",
-                  "Aljunied-Hougang TC website", "SGX REIT announcements",
-                  "Mapletree investor site", "Sesami", "Savills tender page",
-                  "ST Classifieds <date>, p.C11" for print-edition items]
-Angle: [One line — bid direct, JV, sub, or pre-qualify for next round]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🗓️ *UPCOMING WATCHLIST — NEXT 2–4 WEEKS*
-3–5 known tenders closing in the next 2–4 weeks that match the workhead
-filter. Includes anything previously called but still open. This is the
-forward planning section — what to start costing now.
-
-Format per item:
-⏳ [Buyer — scope] · workhead · S$XXX · closes DD Mon
-📍 [Short "where to see" label]
+Format per item (numbered 1–5):
+📌 [#] *[Company / product — specific headline]*
+What it is: [2–3 sentences. Include company, geography, how it works, typical
+  deployment. Be concrete.]
+Why it matters to us: [1–2 sentences tied to our trades — e.g. cost base
+  change for CR06, night-shift savings for CR13, BIM requirement on future
+  bids for CW01]
+Read more: [1–3 links — prefer the official product page first, then a
+  reputable news / case-study article. Format each as:
+  · [Short label] — <https://...>
+  Do NOT fabricate URLs. If you're not 100% sure a URL exists, use the
+  company's root domain (e.g. https://canvas.build) rather than a guessed
+  deep link.]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🦺 *SINGAPORE WSH BULLETIN*
@@ -209,22 +150,45 @@ Takeaway: [One-line specific control measure or toolbox-talk topic]
 If nothing material happened this week, say so in one line. Do not fabricate.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 *SG MARKET DATA — TUNED TO YOUR TRADES*
-Pull only data points that affect the reader's pricing or pipeline. Cover what
-has fresh data this week:
-  • Material prices RELEVANT to CR06/CR09/CW01/FM01:
-      paint, gypsum board, ceramic tiles, vinyl flooring, ceiling systems,
-      cleaning chemicals, light steel framing, RMC (only for shell-and-core)
-  • BCA Tender Price Index (overall direction)
-  • BCA contracts awarded YTD — public vs. private split
-  • URA private rental / commercial occupancy (drives interior fit-out + FM)
-  • MOM work-permit / levy changes (sector quotas, dorm rules)
-  • REIT capex announcements (drives FM + AEI pipeline)
+💰 *TENDER PIPELINE + WATCHLIST + ACTIONS*
+
+This is the combined commercial section. Three parts inside one header:
+
+PART A — *Tenders called this week* (from live web search + any ST Classifieds
+PDF attached). Merge into one list. Tag ST Classifieds items with 📰.
+HARD FILTERS:
+  1. Scope must match one of the reader's registered workheads.
+  2. Tender value ≤ S${TENDER_MAX_SGD_M:.0f}M.
+For EACH item state which workhead it maps to.
+
+Sources to scan (cite which one for every item):
+  PUBLIC: GeBIZ · Sesami · BCA Tenders Portal · LTA eProcurement ·
+  PUB eTender · HDB iTender · JTC eTender · all 17 town council websites ·
+  agency sites (NParks, NEA, SPF, SCDF, MOE, MOH cluster sites).
+  PRIVATE: SGX (REIT AEI disclosures) · REIT websites (CapitaLand, Mapletree,
+  Frasers, Keppel, Lendlease, Suntec, Starhill, ESR-LOGOS, Sabana, Paragon) ·
+  Developer sites (CDL, UOL, GuocoLand, Hong Leong, Far East, Allgreen) ·
+  Managing agents (Savills, Knight Frank, JLL, CBRE, Colliers, Edmund Tie,
+  Cushman & Wakefield) · Healthcare groups · Data-centre operators · REDAS /
+  SCAL / SCIC notices.
 
 Format per item:
-📈 [Metric / deal]
-Number: [Specific figure · period · source]
-Implication: [One-line — what this means for your bidding, margin, or pipeline]
+🏛️ / 🏢 / 📰 [Buyer — headline]  |  workhead: CW01 / CR06 / etc.
+What: [Scope · S$ value · close/award date · reference no.]
+📍 Where to see: [Short label — "GeBIZ (search by ref)", "Aljunied-Hougang
+                   TC website", "SGX REIT announcements", "Savills tender
+                   page", "ST Classifieds <date>, p.C11", etc.]
+Angle: [One line — bid direct, JV, sub, or pre-qualify]
+
+PART B — *Watchlist (2–4 weeks out)*. 3–5 known tenders closing in the next
+2–4 weeks that match the workhead filter — open items to start costing now.
+Format: ⏳ [Buyer — scope] · workhead · S$XXX · closes DD Mon · 📍 source
+
+PART C — *This week's 3 actions*. Three numbered items. Each specific and
+actionable at SME scale:
+  1. A biddable tender (≤ S${TENDER_MAX_SGD_M:.0f}M, matches workheads) — name it.
+  2. A safety / compliance / regulatory action for the team this week.
+  3. A tender prep, briefing, or costing task that has to start now.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 *REGULATORY & COMPLIANCE DEADLINES*
@@ -237,13 +201,6 @@ Implication: [One-line — what this means for your bidding, margin, or pipeline
   • New Codes of Practice taking effect (BCA, WSH, fire safety)
 
 Skip if nothing material this period.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🧭 *THIS WEEK'S 3 BETS*
-Three numbered items. Each specific and actionable at SME scale:
-  1. A biddable tender (≤ S${TENDER_MAX_SGD_M:.0f}M, matches your workheads) — name it.
-  2. A safety, compliance, or regulatory action for the team this week.
-  3. A market or tech signal worth a 30-minute deeper read tied to your trades.
 
 ━━━ RULES ━━━
 • Window: last 7 days for news. Up to 4 weeks for the watchlist section.
