@@ -100,7 +100,8 @@ Be direct and specific. No filler. Reference their actual data and paces."""
         thinking={"type": "adaptive"},
         messages=[{"role": "user", "content": prompt}],
     )
-    return next(b.text for b in response.content if b.type == "text")
+    texts = [b.text for b in response.content if b.type == "text"]
+    return texts[0] if texts else "Fitness analysis unavailable."
 
 
 # ── Strava ────────────────────────────────────────────────────────────────────

@@ -296,8 +296,11 @@ def _run_loop(messages: list[dict], use_opus: bool = False) -> str:
             tool_blocks = [b for b in response.content if b.type == "tool_use"]
 
             def _call(block):
-                handler = _HANDLERS.get(block.name)
-                result = handler(block.input) if handler else f"Unknown tool: {block.name}"
+                try:
+                    handler = _HANDLERS.get(block.name)
+                    result = handler(block.input) if handler else f"Unknown tool: {block.name}"
+                except Exception as e:
+                    result = f"Tool error: {e}"
                 return {"type": "tool_result", "tool_use_id": block.id, "content": str(result)}
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
