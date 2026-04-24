@@ -7,7 +7,8 @@ Gemini's native Google Search gives real-time, comprehensive results at no cost
 on the free tier (1,500 requests/day).
 """
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types as genai_types
 from config import GEMINI_API_KEY, ANTHROPIC_API_KEY
 
 _PROMPT = """\
@@ -77,12 +78,14 @@ def get_intel_briefing() -> str:
 
 
 def _gemini_search() -> str:
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-pro",
-        tools="google_search_retrieval",
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    response = client.models.generate_content(
+        model="gemini-2.5-pro",
+        contents=_PROMPT,
+        config=genai_types.GenerateContentConfig(
+            tools=[genai_types.Tool(google_search=genai_types.GoogleSearch())],
+        ),
     )
-    response = model.generate_content(_PROMPT)
     return response.text
 
 
