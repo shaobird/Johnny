@@ -4,6 +4,9 @@
 # Runtime logs
 *.log
 
+# Runtime memory — never commit (use memory.template.json for structure reference)
+memory.json
+
 # MrktEdge runtime state — never commit
 mrktedge_cookies.json
 seen_mrktedge.json
