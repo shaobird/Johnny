@@ -22,8 +22,12 @@ On-demand via /newsletter in Telegram.
 import base64
 import glob
 import os
+import re
+from urllib.parse import urljoin
 
 import anthropic
+import requests
+from bs4 import BeautifulSoup
 from config import ANTHROPIC_API_KEY, BCA_WORKHEADS, TENDER_MAX_SGD_M
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -243,6 +247,87 @@ def _load_st_classifieds() -> list[dict]:
             "title": os.path.basename(path),
         })
     return blocks
+
+
+# ── Newsletter parsing + image scraping ───────────────────────────────────────
+
+# Section divider used by the system prompt for both display and parsing.
+_DIVIDER = "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Tech items in the newsletter start with "📌 N. *Title*".
+_TECH_ITEM_RE = re.compile(r"^📌\s", flags=re.MULTILINE)
+
+# Headline regex used when the model isn't strictly numbered.
+_URL_RE = re.compile(r"https?://[^\s\)\]\>]+")
+
+
+def parse_newsletter(text: str) -> dict:
+    """
+    Split the newsletter text into structured parts so the Telegram delivery
+    layer can intersperse tech-item photos with text blocks.
+
+    Returns a dict:
+      {
+        "header":      "...intro lines before the first divider...",
+        "tech_intro":  "section header + any prose before the first 📌 item",
+        "tech_items":  [{"text": "...", "url": "https://..." or None}, ...],
+        "tail":        "everything from the divider after tech to the end",
+      }
+    """
+    parts = text.split(_DIVIDER)
+    header = parts[0].strip() if parts else text
+    tech_block = parts[1] if len(parts) > 1 else ""
+    tail = _DIVIDER.join(parts[2:]).strip() if len(parts) > 2 else ""
+
+    items_raw = _TECH_ITEM_RE.split(tech_block)
+    tech_intro = items_raw[0].strip()
+    tech_items: list[dict] = []
+    for chunk in items_raw[1:]:
+        body = "📌 " + chunk.strip()
+        url_match = _URL_RE.search(body)
+        url = url_match.group(0).rstrip(".,;:") if url_match else None
+        tech_items.append({"text": body, "url": url})
+
+    return {
+        "header": header,
+        "tech_intro": tech_intro,
+        "tech_items": tech_items,
+        "tail": tail,
+    }
+
+
+def fetch_og_image(url: str, timeout: int = 8) -> str | None:
+    """
+    Fetch a page and return its og:image (or twitter:image / apple-touch-icon)
+    URL. Returns None on any failure — caller should fall back to text-only.
+    """
+    try:
+        r = requests.get(
+            url,
+            timeout=timeout,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; JohnnyBot/1.0)"},
+        )
+        if r.status_code != 200:
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        og = soup.find("meta", property="og:image") \
+            or soup.find("meta", attrs={"name": "og:image"})
+        if og and og.get("content"):
+            return urljoin(url, og["content"])
+
+        tw = soup.find("meta", attrs={"name": "twitter:image"}) \
+            or soup.find("meta", attrs={"property": "twitter:image"})
+        if tw and tw.get("content"):
+            return urljoin(url, tw["content"])
+
+        atc = soup.find("link", rel="apple-touch-icon")
+        if atc and atc.get("href"):
+            return urljoin(url, atc["href"])
+
+        return None
+    except Exception:
+        return None
 
 
 def get_weekly_newsletter() -> str:

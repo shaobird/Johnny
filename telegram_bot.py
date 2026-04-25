@@ -34,7 +34,7 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
-from agents.construction import get_weekly_newsletter
+from agents.construction import get_weekly_newsletter, parse_newsletter, fetch_og_image
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
@@ -99,7 +99,8 @@ async def cmd_newsletter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         "(govt + private, ≤S$10M).\n"
         "This takes 2–3 minutes ⏳"
     )
-    await _send_long(update, get_weekly_newsletter())
+    text = await asyncio.to_thread(get_weekly_newsletter)
+    await _send_newsletter(update.effective_chat.id, context.bot, text)
 
 
 # ── Free-text handler ─────────────────────────────────────────────────────────
@@ -224,9 +225,50 @@ async def push_weekly_newsletter(app: Application) -> None:
         return
     try:
         text = await asyncio.to_thread(get_weekly_newsletter)
-        await _push(app, text)
+        await _send_newsletter(int(TELEGRAM_CHAT_ID), app.bot, text)
     except Exception as e:
         print(f"[Newsletter] Weekly newsletter failed: {e}")
+
+
+async def _send_newsletter(chat_id: int, bot, text: str) -> None:
+    """
+    Send the newsletter as: header text → tech items as photo+caption (one per
+    item, og:image scraped from each company URL) → tail text. Falls back to
+    text-only for any tech item where the og:image fetch fails.
+    """
+    parsed = parse_newsletter(text)
+
+    if parsed["header"]:
+        await _send_chunks(bot, chat_id, parsed["header"])
+
+    if parsed["tech_intro"]:
+        await _send_chunks(bot, chat_id, parsed["tech_intro"])
+
+    for item in parsed["tech_items"]:
+        img = (
+            await asyncio.to_thread(fetch_og_image, item["url"])
+            if item["url"] else None
+        )
+        caption = item["text"]
+        # Telegram caption limit is 1024 chars
+        if img and len(caption) <= 1024:
+            try:
+                await bot.send_photo(chat_id=chat_id, photo=img, caption=caption)
+                continue
+            except Exception as e:
+                print(f"[Newsletter] photo send failed for {item['url']}: {e}")
+        # Fallback: text-only
+        await _send_chunks(bot, chat_id, caption)
+
+    if parsed["tail"]:
+        # Re-prepend the divider so the tail visually starts where it should
+        await _send_chunks(bot, chat_id, parsed["tail"])
+
+
+async def _send_chunks(bot, chat_id: int, text: str, limit: int = 4096) -> None:
+    """Telegram caps messages at 4096 chars — split if needed."""
+    for i in range(0, len(text), limit):
+        await bot.send_message(chat_id=chat_id, text=text[i:i + limit])
 
 
 async def push_email_alerts(app: Application) -> None:
