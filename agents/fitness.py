@@ -84,15 +84,14 @@ Hevy (strength sessions):
 {hevy}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Respond with a concise analysis (max 6 bullet points) covering:
-1. Weekly compliance — did they hit 3 gym sessions and 3 runs? What's missing?
-2. Run quality — compare easy runs to 6:20/km baseline. Tempo pace vs target. Long run distance trend.
-3. Strength — are they hitting Push/Pull/Legs structure? Any session skipped?
-4. Recovery flags — back-to-back hard sessions? Legs too close to intervals?
-5. Today's priority — what should they focus on TODAY given the day of week?
-6. One specific recommendation to move toward half marathon / HYROX goals.
+Give a 5-bullet summary. One short sentence per bullet. No explanations, no caveats.
+1. Compliance: X/3 gym, X/3 runs. What's missing.
+2. Run quality: pace vs baseline, any red flags.
+3. Strength: PPL structure — what hit, what missed.
+4. Recovery: any back-to-back issues worth flagging.
+5. Today + one action: what to do today and one thing to fix this week.
 
-Be direct and specific. No filler. Reference their actual data and paces."""
+Numbers only where they add signal. Cut everything else."""
 
     response = _client.messages.create(
         model="claude-sonnet-4-6",
