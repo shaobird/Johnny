@@ -95,9 +95,8 @@ Respond with a concise analysis (max 6 bullet points) covering:
 Be direct and specific. No filler. Reference their actual data and paces."""
 
     response = _client.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=700,
-        thinking={"type": "adaptive"},
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
         messages=[{"role": "user", "content": prompt}],
     )
     texts = [b.text for b in response.content if b.type == "text"]
