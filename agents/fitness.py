@@ -94,14 +94,22 @@ Hevy (strength sessions):
 {hevy}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Give a 5-bullet summary. One short sentence per bullet. No explanations, no caveats.
-1. Compliance: X/3 gym, X/3 runs. What's missing.
-2. Run quality: pace vs baseline, any red flags.
-3. Strength: PPL structure — what hit, what missed.
-4. Recovery: any back-to-back issues worth flagging.
-5. Today + one action: what to do today and one thing to fix this week.
+Output exactly this format — no extra text:
 
-Numbers only where they add signal. Cut everything else."""
+*RUNS THIS WEEK*
+| Day | Type | Distance | Time | HR | vs Target |
+|-----|------|----------|------|----|-----------|
+[one row per run, mark ✅ or ⚠️ in vs Target]
+
+*GYM THIS WEEK*
+| Day | Session | Exercises |
+|-----|---------|-----------|
+[one row per session]
+
+*COMPLIANCE:* X/3 gym · X/6 runs
+*ZONE ALERT:* [flag any run with HR >138 as Z3, not Z2]
+*TODAY:* [one sentence — what to do today]
+*FIX THIS WEEK:* [one sentence — biggest gap]"""
 
     response = _client.messages.create(
         model="claude-sonnet-4-6",
