@@ -132,13 +132,26 @@
     }
   },
 
-  "run_baselines": {
-    "aerobic_easy": {
-      "pace_per_km": "6:20",
-      "heart_rate_bpm": 134,
-      "zone": "Zone 2",
-      "note": "Established baseline from recent runs"
-    }
+  "lactate_test": {
+    "test_date": "2026-04-22",
+    "protocol": "Treadmill 1% gradient, 3-min stages, 1-min recovery for blood draws",
+    "thresholds": {
+      "LT1_aerobic":   {"hr_bpm": 133, "pace_per_km": "7:30", "speed_kmh": 8.00},
+      "LT2_anaerobic": {"hr_bpm": 149, "pace_per_km": "6:03", "speed_kmh": 9.91}
+    },
+    "zones": {
+      "Z1_easy":      {"hr_max": 126, "pace_slower_than": "8:25", "rpe": "1-2",  "feel": "Talk like normal"},
+      "Z2_steady":    {"hr_range": "127-138", "pace_range": "8:24-7:03", "rpe": "3-4",  "feel": "Carry conversation"},
+      "Z3_mod_hard":  {"hr_range": "139-148", "pace_range": "7:02-6:04", "rpe": "5-6",  "feel": "Short sentences"},
+      "Z4_hard":      {"hr_range": "149-154", "pace_range": "6:03-5:47", "rpe": "7-8",  "feel": "Words at a time"},
+      "Z5_very_hard": {"hr_min": 155, "pace_faster_than": "5:46", "rpe": "9-10", "feel": "No talking"}
+    },
+    "implications": [
+      "1:45 half marathon target (4:58/km) is faster than current Z5 pace — not realistic short term",
+      "Realistic half marathon range based on current LT2: 2:05-2:15",
+      "To hit 1:45, must push LT2 from 6:03/km down to ~5:00/km via consistent Z2 base + Z4 intervals",
+      "Easy Zone 2 ceiling is 138 bpm — most past 'easy' runs at 130-145 were drifting into Z3"
+    ]
   },
 
   "fitness_baselines": {},

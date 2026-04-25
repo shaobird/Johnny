@@ -68,10 +68,20 @@ Key rules:
   • No gym on Wednesday — recovery spacing critical
   • Sunday Zone 3 session is the most important of the week — protect it
 
-Run baselines:
-  • Zone 2: ~6:20/km @ ~134 bpm (established)
-  • Zone 4 intervals: target ~5:00–5:15/km per rep
-  • Zone 3 (Sunday): comfortably hard, sustainable for 30 min blocks
+Lactate test zones (22 Apr 2026 — use these, not generic zones):
+  • Z1 Easy:      HR <126,     pace >8:25/km
+  • Z2 Steady:    HR 127–138,  pace 8:24–7:03/km
+  • Z3 Mod Hard:  HR 139–148,  pace 7:02–6:04/km
+  • Z4 Hard:      HR 149–154,  pace 6:03–5:47/km
+  • Z5 Very Hard: HR 155+,     pace <5:46/km
+  • LT1 (aerobic threshold): 133 bpm / 7:30/km
+  • LT2 (anaerobic threshold): 149 bpm / 6:03/km
+
+Reality check on goals:
+  • 1:45 half marathon = 4:58/km — currently faster than user's Z5. Not realistic short-term.
+  • Realistic half marathon range now: 2:05–2:15
+  • Path to 1:45: push LT2 down from 6:03/km via consistent Z2 base + Z4 intervals
+  • Flag if user is doing "easy" runs at HR >138 — that's actually Z3, not aerobic base
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Today is {today}.
