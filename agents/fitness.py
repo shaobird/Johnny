@@ -54,24 +54,24 @@ Hybrid athlete: PPL strength (3x/week) + 3 runs/week
 Goals: Half marathon + HYROX
 
 Weekly schedule:
-  MON — Push (upper body, can push hard)
-  TUE — Easy Run Zone 2 (5–7km, HR 130–145 bpm, ~6:20–6:40/km)
-  WED — Pull (upper body, can push hard)
-  THU — Tempo Run (1km easy + 3–4km tempo + cooldown)
-  FRI — Legs (runner-friendly, ALWAYS leave 2 reps in reserve)
-  SAT — Intervals (400m or 800m repeats)
-  SUN — Long Run (8–12km, slow pace)
+  MON — Push gym (45 min) + Zone 2 run (25 min, HR 120–139)
+  TUE — Easy Run Zone 2 (45 min, conversational)
+  WED — Zone 4 intervals (30 min: 10 warm-up + 5×2 min Zone 4 + cooldown). No gym.
+  THU — Legs gym (60 min, 2 reps in reserve) + Zone 2 run (25 min, very relaxed)
+  FRI — Pull gym (45 min) + Zone 2 run (23 min, optional if fatigued)
+  SAT — Easy Run Zone 2 (45 min, same effort as Tuesday)
+  SUN — Zone 3 Endurance (1h22: 40 min Z2 → 30 min Z3 → 12 min steady)
 
 Key rules:
-  • Legs = strength support, never train to failure
-  • Upper body can be pushed hard
-  • Leg day must not ruin Saturday intervals
-  • User also plays golf and trades forex in evenings — recovery matters
+  • Legs = strength support only, never to failure, always 2 reps in reserve
+  • Upper body can be pushed hard — hit 12 reps both sets then increase weight
+  • No gym on Wednesday — recovery spacing critical
+  • Sunday Zone 3 session is the most important of the week — protect it
 
 Run baselines:
-  • Easy/Zone 2: ~6:20/km @ ~134 bpm (established baseline)
-  • Tempo: target ~5:20–5:35/km (to be established)
-  • Long run: slow, conversational pace
+  • Zone 2: ~6:20/km @ ~134 bpm (established)
+  • Zone 4 intervals: target ~5:00–5:15/km per rep
+  • Zone 3 (Sunday): comfortably hard, sustainable for 30 min blocks
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Today is {today}.
