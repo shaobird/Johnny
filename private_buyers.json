@@ -1,0 +1,40 @@
+{
+  "_doc": "Major private-sector buyers in Singapore likely to issue CR13/CR09/CW01 scope tenders. Most run procurement through SAP Ariba (Ariba Network) or their own supplier portals — register once, then watch each.",
+
+  "sap_ariba_buyers": [
+    {"name": "CapitaLand Investment", "portfolio": "Malls (CICT), industrial/logistics (CLAR), commercial offices — large R&R + waterproofing pipeline."},
+    {"name": "Mapletree", "portfolio": "MIT (industrial), MLT (logistics), MCT (commercial). Heavy roof waterproofing + facade R&R."},
+    {"name": "Frasers Property", "portfolio": "FCT (retail), FLCT (logistics), FH (hospitality). Periodic A&A across mall portfolio."},
+    {"name": "Keppel", "portfolio": "KCL (commercial), KIT (industrial), KREIT (offices). Office-block R&R + tower waterproofing."},
+    {"name": "City Developments (CDL)", "portfolio": "Residential + commercial property — A&A and rectification works."},
+    {"name": "ST Engineering", "portfolio": "Industrial facilities — roof + factory R&R."},
+    {"name": "SembCorp", "portfolio": "Industrial + utilities — plant building works."},
+    {"name": "Singtel", "portfolio": "Exchange buildings, data centres — waterproofing critical."},
+    {"name": "StarHub", "portfolio": "Network buildings, head-end facilities."}
+  ],
+
+  "developer_and_reit_portals": [
+    {"name": "Hongkong Land", "portfolio": "Marina Bay Financial Centre, One Raffles Quay — premium office R&R."},
+    {"name": "GuocoLand", "portfolio": "Tanjong Pagar Centre, Guoco Tower — mixed-use."},
+    {"name": "UOL Group", "portfolio": "Mixed-use residential + commercial."},
+    {"name": "Wing Tai", "portfolio": "Residential + hospitality."},
+    {"name": "Far East Organization", "portfolio": "Residential + hospitality + retail — large private-sector pipeline."},
+    {"name": "Lendlease", "portfolio": "Paya Lebar Quarter, Jem — retail-led mixed-use."},
+    {"name": "Suntec REIT (ARA)", "portfolio": "Suntec City convention + retail + office."},
+    {"name": "OUE", "portfolio": "OUE Bayfront, Mandarin Gallery — commercial + retail."}
+  ],
+
+  "hospitality_buyers": [
+    {"name": "Marina Bay Sands", "portfolio": "Integrated resort — rolling R&R + waterproofing on a vast complex."},
+    {"name": "Resorts World Sentosa (Genting)", "portfolio": "Resort complex R&R."},
+    {"name": "Pan Pacific Hotels Group", "portfolio": "Hotel portfolio R&R."},
+    {"name": "Frasers Hospitality", "portfolio": "Serviced residences R&R."}
+  ],
+
+  "industrial_and_telco": [
+    {"name": "Singtel data centres", "portfolio": "DC roof + waterproofing — leak risk = revenue loss."},
+    {"name": "Equinix / Digital Realty / STT GDC", "portfolio": "Hyperscale DC building works — premium pricing on waterproofing."},
+    {"name": "Raffles Medical Group", "portfolio": "Hospital + clinic R&R."},
+    {"name": "IHH / Parkway Pantai", "portfolio": "Mount Elizabeth, Gleneagles, Parkway East — hospital R&R."}
+  ]
+}

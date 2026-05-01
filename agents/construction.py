@@ -28,6 +28,7 @@ from config import GEMINI_API_KEY, ANTHROPIC_API_KEY
 SGT = ZoneInfo("Asia/Singapore")
 ST_FEED = "st_classifieds.json"
 GOV_BUYERS = "gov_buyers.json"
+PRIVATE_BUYERS = "private_buyers.json"
 
 
 def _week_ending_friday() -> str:
@@ -109,10 +110,43 @@ def _load_gov_buyers() -> str:
     return "\n".join(lines)
 
 
+def _load_private_buyers() -> str:
+    """Render the private-sector buyer registry (SAP Ariba + portals)."""
+    if not os.path.exists(PRIVATE_BUYERS):
+        return "Private buyer registry: missing (private_buyers.json)."
+    try:
+        with open(PRIVATE_BUYERS) as f:
+            data = json.load(f)
+    except Exception as e:
+        return f"Private buyer registry: read error — {e}"
+
+    lines = ["SAP ARIBA NETWORK — register once, then check Ariba Discovery weekly:"]
+    for b in data.get("sap_ariba_buyers", []):
+        lines.append(f"  • {b['name']} — {b['portfolio']}")
+
+    lines.append("")
+    lines.append("Developer / REIT supplier portals — check direct:")
+    for b in data.get("developer_and_reit_portals", []):
+        lines.append(f"  • {b['name']} — {b['portfolio']}")
+
+    lines.append("")
+    lines.append("Hospitality — high R&R cadence:")
+    for b in data.get("hospitality_buyers", []):
+        lines.append(f"  • {b['name']} — {b['portfolio']}")
+
+    lines.append("")
+    lines.append("Industrial / DC / Healthcare:")
+    for b in data.get("industrial_and_telco", []):
+        lines.append(f"  • {b['name']} — {b['portfolio']}")
+
+    return "\n".join(lines)
+
+
 def _build_prompt() -> str:
     week_ending = _week_ending_friday()
     st_block = _load_st_classifieds()
     gov_block = _load_gov_buyers()
+    private_block = _load_private_buyers()
     return f"""\
 You are the construction-business intelligence agent for a Singapore-registered
 contractor. Produce this week's newsletter using LIVE Google Search. Be specific,
@@ -143,6 +177,16 @@ Use this verbatim in the ST Classifieds section below. Do not search; use what's
 ━━━ GOVERNMENT BUYER REGISTRY (GeBIZ procuring entities) ━━━
 {gov_block}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━ PRIVATE-SECTOR BUYER REGISTRY (SAP Ariba + supplier portals) ━━━
+{private_block}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━ TENDERBOARD AGGREGATOR ━━━
+Live-search the public / free-tier listings on tenderboard.com.sg for tenders
+matching CR13 / CR09 / CW01 keywords. Surface anything in scope; skip the
+paywalled items unless their headline alone is enough to flag.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ OUTPUT FORMAT — FOLLOW EXACTLY ━━━
 
@@ -192,12 +236,20 @@ If WSH / MOM published a notable construction incident or advisory this week, ad
 
 📋 GeBIZ — live search results matching keywords: "waterproofing", "re-roofing",
 "repaint", "A&A", "addition and alteration", "minor improvement",
-"ceiling repair", "external wall". Filter strictly:
+"ceiling repair", "external wall". Cross-reference against the Tier 1
+government buyer registry above — prioritise tenders from those buyers.
+Filter strictly:
   - Workhead matches CR13 / CR09 / CW01
   - Closing 4-8 weeks out
   - Indicative value within scope (≤ S$13M)
 Format each: • [Title] — [Buyer] — Closes [date] — [Est value] — [GeBIZ link]
 If nothing in scope this week, say so in one line.
+
+📋 Tenderboard.com.sg (free tier) — surface in-scope listings not on GeBIZ.
+
+📋 SAP Ariba / private supplier portals — list any active RFQs found via
+live search from the Private-Sector Buyer Registry above. If nothing
+public, say so in one line.
 
 📋 ST Classifieds — use the PARSED block supplied above verbatim.
 List IN-SCOPE tenders with all details (title, buyer, closing, eligibility, contact).
