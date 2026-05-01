@@ -112,7 +112,8 @@ def _claude_search() -> str:
         if response.stop_reason == "end_turn":
             break
         if response.stop_reason == "pause_turn":
-            messages.append({"role": "assistant", "content": response.content})
+            content = [b for b in response.content if not (b.type == "text" and not b.text.strip())]
+            messages.append({"role": "assistant", "content": content})
             continue
         break
 

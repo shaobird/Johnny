@@ -292,7 +292,8 @@ def _run_loop(messages: list[dict], use_opus: bool = False) -> str:
             return _extract_text(response)
 
         if response.stop_reason == "tool_use":
-            messages.append({"role": "assistant", "content": response.content})
+            content = [b for b in response.content if not (b.type == "text" and not b.text.strip())]
+            messages.append({"role": "assistant", "content": content})
             tool_blocks = [b for b in response.content if b.type == "tool_use"]
 
             def _call(block):
