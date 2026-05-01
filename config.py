@@ -37,3 +37,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Gemini — web search / intel layer
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Construction weekly newsletter — day_of_week (mon..sun) + 24h time
+CONSTRUCTION_BRIEFING_DAY = os.getenv("CONSTRUCTION_BRIEFING_DAY", "fri")
+CONSTRUCTION_BRIEFING_TIME = os.getenv("CONSTRUCTION_BRIEFING_TIME", "17:00")

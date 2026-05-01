@@ -1,0 +1,45 @@
+{
+  "edition_date": "2026-05-01",
+  "tenders": [
+    {
+      "buyer": "Jalan Besar Town Council",
+      "title": "Reroofing to 11 blocks at Kampong Glam Division",
+      "duration_months": 16,
+      "eligibility": "CR13 Waterproofing Installation — L3 (S$5M) & above",
+      "closing": "22 May 2026 (Fri)",
+      "contact": "RFG-26-004-JB@emservices.com.sg",
+      "in_scope": false,
+      "scope_note": "Workhead match (CR13) but grade L3 required — we hold L1. Out of grade."
+    },
+    {
+      "buyer": "Tampines Town Council",
+      "title": "Construction of shelters over existing ramps at Blk 887 & 888 Tampines Ave 3",
+      "duration_months": 8,
+      "eligibility": "CW01 General Building — C3 (S$0.8M) & above",
+      "closing": "22 May 2026 (Fri)",
+      "contact": "AA-26-009-TM@emservices.com.sg",
+      "in_scope": true,
+      "scope_note": "CW01 floor C3 — we hold C1, qualified. Modest size, fast close (~3 weeks)."
+    },
+    {
+      "buyer": "West Coast–Jurong West Town Council",
+      "title": "NRP (Batch 12) Blk 752–761, 764–766 and 764A MSCP, Jurong West St 74",
+      "duration_months": 24,
+      "eligibility": "CW01 General Building — C1 (S$5M) & above",
+      "closing": "29 May 2026 (Fri)",
+      "contact": "NRP-26-006-WCJW@emservices.com.sg",
+      "in_scope": true,
+      "scope_note": "CW01 floor C1 — we qualify at grade ceiling. Strong NRP fit (R&R + general building under one HDB programme); 24-month duration."
+    },
+    {
+      "buyer": "PSA Corporation Limited",
+      "title": "Construction of Tuas Tower (Tender 2026/QS/BC/PSAC/4018875)",
+      "duration_months": null,
+      "eligibility": "CW01 General Building — A1 financial limit, bizSAFE 3+",
+      "closing": "12 Jun 2026, 12:00 pm",
+      "contact": "https://www.singaporepsa.com/resources/tender-notices/",
+      "in_scope": false,
+      "scope_note": "CW01 A1 required — we hold C1. Out of grade."
+    }
+  ]
+}

@@ -17,6 +17,7 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
+from agents.construction import get_construction_briefing
 from agents.training_loop import get_training_analysis, log_proposal, record_outcome
 from agents.gmail import get_email_summary
 import memory as mem
@@ -136,6 +137,17 @@ _TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
+        "name": "get_construction_briefing",
+        "description": (
+            "Generate the weekly construction-business newsletter for the user's "
+            "Singapore contractor (CR13-L1 Waterproofing, CR09-L4 Repair & Redec, "
+            "CW01-C1 General Building). Returns construction tech top 5, safety "
+            "reminders, tender pipeline + portal watchlist + 3 weekly actions, "
+            "and rolling regulatory deadlines. Live web search; takes 1–2 minutes."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
         "name": "save_note",
         "description": (
             "Save a note to Johnny's persistent memory. Use this to record patterns, "
@@ -209,6 +221,7 @@ _HANDLERS = {
     "check_fitness":           lambda _:   get_fitness_summary(),
     "get_forex_news":          lambda _:   get_high_impact_news(),
     "get_intel_briefing":      lambda _:   get_intel_briefing(),
+    "get_construction_briefing": lambda _: get_construction_briefing(),
     "save_note":               lambda inp: mem.add_note(inp["note"]),
     "analyze_training":        lambda _:   get_training_analysis(),
     "log_training_proposal":   lambda inp: log_proposal(inp["proposal"], inp["variable"], inp["hypothesis"]),

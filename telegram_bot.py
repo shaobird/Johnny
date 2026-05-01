@@ -33,6 +33,7 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
+from agents.construction import get_construction_briefing
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
@@ -89,6 +90,14 @@ async def cmd_intel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("🔴 Scraping Forex Factory…")
     await _send_long(update, get_high_impact_news())
+
+
+async def cmd_construction(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        "🏗️ Pulling construction intel — tech, tenders, safety, regulatory…\n"
+        "This takes 1–2 minutes ⏳"
+    )
+    await _send_long(update, get_construction_briefing())
 
 
 # ── Free-text handler ─────────────────────────────────────────────────────────
@@ -206,6 +215,15 @@ async def push_intel(app: Application) -> None:
     await _push(app, text)
 
 
+async def push_construction(app: Application) -> None:
+    """Called weekly by the scheduler to send the construction newsletter."""
+    if not TELEGRAM_CHAT_ID:
+        print("TELEGRAM_CHAT_ID not set — skipping construction newsletter.")
+        return
+    text = await asyncio.to_thread(get_construction_briefing)
+    await _push(app, text)
+
+
 async def push_email_alerts(app: Application) -> None:
     """Called every 30 min — pushes new relevant emails instantly."""
     if not TELEGRAM_CHAT_ID:
@@ -290,6 +308,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("fitness", cmd_fitness))
     app.add_handler(CommandHandler("news", cmd_news))
     app.add_handler(CommandHandler("intel", cmd_intel))
+    app.add_handler(CommandHandler("construction", cmd_construction))
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -307,6 +326,7 @@ async def _set_commands(app: Application) -> None:
         ("fitness",  "Workout summary"),
         ("news",     "Forex high-impact events"),
         ("intel",    "AI, construction & macro briefing"),
+        ("construction", "Weekly construction-business intel"),
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
     ])

@@ -13,7 +13,12 @@ Jobs:
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import Application
 
-from config import BRIEFING_TIME, INTEL_BRIEFING_TIME
+from config import (
+    BRIEFING_TIME,
+    INTEL_BRIEFING_TIME,
+    CONSTRUCTION_BRIEFING_DAY,
+    CONSTRUCTION_BRIEFING_TIME,
+)
 
 
 def setup(app: Application) -> AsyncIOScheduler:
@@ -24,6 +29,7 @@ def setup(app: Application) -> AsyncIOScheduler:
     from telegram_bot import (
         push_briefing,
         push_intel,
+        push_construction,
         push_mrktedge_alerts,
         push_maintenance_report,
         push_weekly_retro,
@@ -90,6 +96,20 @@ def setup(app: Application) -> AsyncIOScheduler:
         minute=0,
         args=[app],
         id="weekly_retro",
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
+
+    # ── Job 7: Weekly construction newsletter (Friday 17:00 SGT default) ──────
+    c_hour, c_min = CONSTRUCTION_BRIEFING_TIME.split(":")
+    scheduler.add_job(
+        push_construction,
+        trigger="cron",
+        day_of_week=CONSTRUCTION_BRIEFING_DAY,
+        hour=int(c_hour),
+        minute=int(c_min),
+        args=[app],
+        id="construction_newsletter",
         replace_existing=True,
         misfire_grace_time=3600,
     )
