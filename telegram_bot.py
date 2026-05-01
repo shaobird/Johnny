@@ -34,9 +34,16 @@ from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.construction import get_construction_briefing
+from agents.emailer import send_email
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
+from config import (
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    OPENAI_API_KEY,
+    WORK_EMAIL,
+    MANUS_SUBJECT_TAG,
+)
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
 _history: dict[int, list[dict]] = {}
@@ -97,7 +104,19 @@ async def cmd_construction(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         "🏗️ Pulling construction intel — tech, tenders, safety, regulatory…\n"
         "This takes 1–2 minutes ⏳"
     )
-    await _send_long(update, get_construction_briefing())
+    text = await asyncio.to_thread(get_construction_briefing)
+    await _send_long(update, text)
+
+    if WORK_EMAIL and context.args and context.args[0].lower() == "email":
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        week_label = datetime.now(ZoneInfo("Asia/Singapore")).strftime("%d %b %Y")
+        subject = f"{MANUS_SUBJECT_TAG} Weekly Construction Intel — {week_label}"
+        try:
+            await asyncio.to_thread(send_email, WORK_EMAIL, subject, text)
+            await update.message.reply_text(f"📧 Emailed to {WORK_EMAIL}")
+        except Exception as e:
+            await update.message.reply_text(f"⚠️ Email handoff failed: {e}")
 
 
 # ── Free-text handler ─────────────────────────────────────────────────────────
@@ -216,12 +235,33 @@ async def push_intel(app: Application) -> None:
 
 
 async def push_construction(app: Application) -> None:
-    """Called weekly by the scheduler to send the construction newsletter."""
+    """
+    Called weekly by the scheduler. Pushes the construction newsletter to Telegram
+    and — if WORK_EMAIL is set — emails it to the work mailbox tagged for Manus.
+    """
     if not TELEGRAM_CHAT_ID:
         print("TELEGRAM_CHAT_ID not set — skipping construction newsletter.")
         return
+
     text = await asyncio.to_thread(get_construction_briefing)
     await _push(app, text)
+
+    if WORK_EMAIL:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        week_label = datetime.now(ZoneInfo("Asia/Singapore")).strftime("%d %b %Y")
+        subject = f"{MANUS_SUBJECT_TAG} Weekly Construction Intel — {week_label}"
+        try:
+            await asyncio.to_thread(send_email, WORK_EMAIL, subject, text)
+            await app.bot.send_message(
+                chat_id=int(TELEGRAM_CHAT_ID),
+                text=f"📧 Newsletter emailed to {WORK_EMAIL} (subject tag: {MANUS_SUBJECT_TAG})",
+            )
+        except Exception as e:
+            await app.bot.send_message(
+                chat_id=int(TELEGRAM_CHAT_ID),
+                text=f"⚠️ Email handoff failed: {e}",
+            )
 
 
 async def push_email_alerts(app: Application) -> None:

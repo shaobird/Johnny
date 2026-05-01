@@ -1,0 +1,79 @@
+{
+  "_doc": "Singapore government procuring entities tiered by likelihood of issuing construction tenders that match CR13 (Waterproofing) / CR09 (Repair & Redec) / CW01 (General Building) scope. Tier 1 buyers are searched live each week; tier 2 are spot-checked when time allows; tier 3 / skip are screened out.",
+
+  "tier_1_high_frequency": [
+    {"name": "HDB",  "full": "Housing & Development Board",            "why": "Block R&R, NRP/MUP, void deck A&A — core CW01/CR09 pipeline."},
+    {"name": "LTA",  "full": "Land Transport Authority",                "why": "Depot R&R, station/tunnel waterproofing — heavy CR13/CW01."},
+    {"name": "JTC",  "full": "JTC Corporation",                         "why": "Industrial roofs, factory R&R — CR13/CR09."},
+    {"name": "PUB",  "full": "Singapore's National Water Agency",       "why": "Reservoir / water-treatment waterproofing — direct CR13."},
+    {"name": "NParks","full": "National Parks Board",                   "why": "Visitor centres, comfort stations, park buildings — CW01/CR09."},
+    {"name": "NEA",  "full": "National Environment Agency",             "why": "Hawker centres, market R&R — frequent CR09/CW01."},
+    {"name": "NHB",  "full": "National Heritage Board",                 "why": "Heritage building restoration — premium CR09."},
+    {"name": "PA",   "full": "People's Association",                    "why": "Community clubs, RC centres — frequent A&A."},
+    {"name": "SportSG","full": "Sport Singapore",                       "why": "Sports halls, swimming complexes — CR13 waterproofing critical."},
+    {"name": "NAC",  "full": "National Arts Council",                   "why": "Arts venues, theatres — periodic R&R."},
+    {"name": "MOE",  "full": "Ministry of Education",                   "why": "School A&A, classroom block R&R — large CW01/CR09 pipeline."},
+    {"name": "MOH",  "full": "Ministry of Health",                      "why": "Hospital and polyclinic R&R — high CR09 fit."},
+    {"name": "HTX",  "full": "Home Team Science & Technology Agency",   "why": "Police/civil-defence facilities R&R."},
+    {"name": "CAAS", "full": "Civil Aviation Authority of Singapore",   "why": "Airport-side civilian buildings — CW01/CR13."},
+    {"name": "MPA",  "full": "Maritime and Port Authority",             "why": "Port-side facilities, lighthouses — CW01/CR13."},
+    {"name": "ITE",  "full": "Institute of Technical Education",        "why": "Campus R&R."},
+    {"name": "NTU",  "full": "Nanyang Technological University",        "why": "Campus R&R, dormitory A&A."},
+    {"name": "NUS",  "full": "National University of Singapore",        "why": "Campus R&R, hostel A&A."},
+    {"name": "Polys","full": "NP / NYP / RP / SP / TP",                 "why": "Polytechnic campus R&R."},
+    {"name": "TownCouncils","full": "All 17 town councils via EM Services / CPG / etc.", "why": "Block waterproofing, repaint, void deck R&R — 200K-3M sweet spot."}
+  ],
+
+  "tier_1_hospital_clusters": [
+    {"name": "SGH", "full": "Singapore General Hospital"},
+    {"name": "NUH", "full": "National University Hospital"},
+    {"name": "TTSH","full": "Tan Tock Seng Hospital"},
+    {"name": "CGH", "full": "Changi General Hospital"},
+    {"name": "KTPH","full": "Khoo Teck Puat Hospital"},
+    {"name": "NTFGH","full": "Ng Teng Fong General Hospital & Jurong Community Hospital"},
+    {"name": "SKGH","full": "Sengkang General Hospital"},
+    {"name": "KKWCH","full": "KK Women's and Children's Hospital"},
+    {"name": "AH",  "full": "Alexandra Hospital"},
+    {"name": "IMH", "full": "Institute of Mental Health"},
+    {"name": "Woodlands","full": "Woodlands Hospital"}
+  ],
+
+  "tier_2_medium_frequency": [
+    {"name": "BCA",  "full": "Building & Construction Authority"},
+    {"name": "URA",  "full": "Urban Redevelopment Authority"},
+    {"name": "SDC",  "full": "Sentosa Development Corporation"},
+    {"name": "STB",  "full": "Singapore Tourism Board"},
+    {"name": "HSA",  "full": "Health Sciences Authority"},
+    {"name": "HPB",  "full": "Health Promotion Board"},
+    {"name": "NLB",  "full": "National Library Board"},
+    {"name": "SEAB", "full": "Singapore Examinations and Assessment Board"},
+    {"name": "ESG",  "full": "Enterprise Singapore"},
+    {"name": "EDB",  "full": "Economic Development Board"},
+    {"name": "WSG",  "full": "Workforce Singapore"},
+    {"name": "IRAS", "full": "Inland Revenue Authority of Singapore"},
+    {"name": "MCCY", "full": "Ministry of Culture, Community and Youth"},
+    {"name": "MSE",  "full": "Ministry of Sustainability and the Environment"},
+    {"name": "MND",  "full": "Ministry of National Development"},
+    {"name": "MOT",  "full": "Ministry of Transport"},
+    {"name": "SCB",  "full": "Science Centre Board"},
+    {"name": "EMA",  "full": "Energy Market Authority"},
+    {"name": "GovTech","full": "Government Technology Agency"},
+    {"name": "Parliament","full": "Parliament of Singapore"},
+    {"name": "Istana","full": "Istana"}
+  ],
+
+  "tier_3_low_or_admin_only": [
+    "ACRA", "MAS", "IPOS", "CDA", "SDC (Singapore Dental Council)", "SPC", "SNB", "SMC",
+    "AGC", "AGO", "FJCOURTS", "STATE COURTS", "SUPCOURT", "PSC", "CAB",
+    "Council for Estate Agencies", "Board of Architects", "Land Surveyors Board",
+    "Public Transport Council", "MAJLIS UGAMA ISLAM SINGAPURA",
+    "PROFESSIONAL ENGINEERS BOARD", "HOTELS LICENSING BOARD"
+  ],
+
+  "skip_out_of_scope": [
+    "MINDEF", "DSTA", "Gambling Regulatory Authority",
+    "Yellow Ribbon Singapore", "Industrial Arbitration Court",
+    "Civil Service College", "Singapore Labour Foundation",
+    "Traditional Chinese Medicine Practitioners Board"
+  ]
+}

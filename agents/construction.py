@@ -27,6 +27,7 @@ from config import GEMINI_API_KEY, ANTHROPIC_API_KEY
 
 SGT = ZoneInfo("Asia/Singapore")
 ST_FEED = "st_classifieds.json"
+GOV_BUYERS = "gov_buyers.json"
 
 
 def _week_ending_friday() -> str:
@@ -79,9 +80,39 @@ def _load_st_classifieds() -> str:
     return "\n".join(lines)
 
 
+def _load_gov_buyers() -> str:
+    """Render the tiered government buyer registry for the prompt."""
+    if not os.path.exists(GOV_BUYERS):
+        return "Government buyer registry: missing (gov_buyers.json)."
+    try:
+        with open(GOV_BUYERS) as f:
+            data = json.load(f)
+    except Exception as e:
+        return f"Government buyer registry: read error — {e}"
+
+    lines = ["TIER 1 — search GeBIZ for current open tenders from each:"]
+    for b in data.get("tier_1_high_frequency", []):
+        lines.append(f"  • {b['name']} ({b['full']}) — {b.get('why','')}")
+
+    lines.append("")
+    lines.append("TIER 1 — hospital clusters (R&R + waterproofing pipeline):")
+    for h in data.get("tier_1_hospital_clusters", []):
+        lines.append(f"  • {h['name']} — {h['full']}")
+
+    lines.append("")
+    lines.append("TIER 2 — spot-check if Tier 1 yield is thin:")
+    for b in data.get("tier_2_medium_frequency", []):
+        lines.append(f"  • {b['name']} — {b['full']}")
+
+    lines.append("")
+    lines.append("Skip Tier 3 / admin-only / out-of-scope buyers — see gov_buyers.json.")
+    return "\n".join(lines)
+
+
 def _build_prompt() -> str:
     week_ending = _week_ending_friday()
     st_block = _load_st_classifieds()
+    gov_block = _load_gov_buyers()
     return f"""\
 You are the construction-business intelligence agent for a Singapore-registered
 contractor. Produce this week's newsletter using LIVE Google Search. Be specific,
@@ -108,6 +139,10 @@ Use this verbatim in the ST Classifieds section below. Do not search; use what's
 
 {st_block}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━ GOVERNMENT BUYER REGISTRY (GeBIZ procuring entities) ━━━
+{gov_block}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ OUTPUT FORMAT — FOLLOW EXACTLY ━━━
 

@@ -41,3 +41,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # Construction weekly newsletter — day_of_week (mon..sun) + 24h time
 CONSTRUCTION_BRIEFING_DAY = os.getenv("CONSTRUCTION_BRIEFING_DAY", "fri")
 CONSTRUCTION_BRIEFING_TIME = os.getenv("CONSTRUCTION_BRIEFING_TIME", "17:00")
+
+# Email handoff — sends the construction newsletter to a work mailbox so
+# Manus AI (or any downstream agent watching that inbox) can pick it up.
+EMAIL_SMTP_HOST = os.getenv("EMAIL_SMTP_HOST", "smtp.gmail.com")
+EMAIL_SMTP_PORT = int(os.getenv("EMAIL_SMTP_PORT", "587"))
+EMAIL_USERNAME = os.getenv("EMAIL_USERNAME")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")          # Gmail app password
+EMAIL_FROM = os.getenv("EMAIL_FROM")                  # defaults to EMAIL_USERNAME
+WORK_EMAIL = os.getenv("WORK_EMAIL")                  # recipient Manus watches
+MANUS_SUBJECT_TAG = os.getenv("MANUS_SUBJECT_TAG", "[Manus]")
