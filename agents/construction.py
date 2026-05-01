@@ -40,31 +40,23 @@ _SEARCH_TOOLS = [
     {"type": "web_fetch_20260209", "name": "web_fetch"},
 ]
 
-# ── Workhead reference table (BCA CRS) ────────────────────────────────────────
+# ── Workhead reference table ──────────────────────────────────────────────────
+# These reflect the reader's actual practice areas (which may use older or
+# specialist BCA labels). Keep these aligned with how the reader thinks of
+# their own scope, not the post-2022 generic CRS naming.
 _WORKHEAD_NAMES = {
     "CW01": "General Building",
     "CW02": "Civil Engineering",
-    "CR01": "Piling Work",
-    "CR02": "Ground Support & Stabilisation",
-    "CR03": "Structural Steelwork",
-    "CR04": "Pre-cast / Pre-stressed Concrete",
-    "CR05": "Plumbing & Sanitary",
     "CR06": "Painting",
-    "CR07": "Glass & Aluminium",
-    "CR08": "Roofing & Waterproofing",
-    "CR09": "Interior Decoration & Finishing",
-    "CR10": "Soil Investigation",
-    "CR11": "Tunnelling",
-    "CR12": "Mechanical / Plant / Air-conditioning",
-    "CR13": "Housekeeping / Cleaning",
-    "CR14": "Insulation Works",
+    "CR09": "Repair & Redecoration / Interior Decoration & Finishing",
+    "CR13": "Waterproofing Works",
+    "FM01": "Facilities Management — Building, M&E Maintenance",
+    "FM02": "Integrated Facilities Management",
     "ME01": "Electrical Engineering",
     "ME02": "Mechanical Engineering",
     "ME03": "Lift & Escalator",
     "ME04": "Air-conditioning, Refrigeration & Ventilation",
     "ME05": "Fire Prevention & Protection",
-    "FM01": "Facilities Management — Building, M&E Maintenance",
-    "FM02": "Integrated Facilities Management",
 }
 
 
@@ -98,14 +90,24 @@ Anything outside this scope is noise — drop it.
 
 {_format_workheads()}
 
-Effective scope: General Building shell + interior fit-out & finishing
-(painting, decoration, finishes), housekeeping/cleaning, and Facilities
-Management (Building + M&E Maintenance).
+Effective scope (match by ACTIVITY, not just code number):
+  • Waterproofing — roof, basement, external wall, PUB-spec waterproofing,
+    membrane works, leak repair
+  • Repair & redecoration — interior fit-out refurbishment, A&A, repaint with
+    minor works, tile and finishes replacement, ceiling refurb
+  • General Building — small/mid building works, void-deck and HDB block
+    A&A, light institutional / community buildings (≤ S$4M per CW01-C1 cap)
 
 OUT OF SCOPE — do NOT surface tenders for: civil engineering, piling,
 tunnelling, structural steel, M&E specialist (electrical, lift, ACMV, fire
-protection), unless explicitly as a sub-package the reader's GB workhead
-could front and sub out.
+protection), pure cleaning / conservancy contracts, painting-only contracts
+without R&R component — unless explicitly as a sub-package the reader's
+GB workhead could front and sub out.
+
+GRADE / SIZE FILTER — apply per workhead:
+  • CW01-C1 → up to ~S$4M (skip jobs above)
+  • CR09-L4 → up to ~S$13M (capped further by TENDER_MAX_SGD_M)
+  • CR13-L1 → up to ~S$650K (small waterproofing / leak-repair scope)
 
 ━━━ NEWSLETTER STRUCTURE ━━━
 Produce EXACTLY this structure, in this order:
@@ -166,15 +168,39 @@ HARD FILTERS:
 For EACH item state which workhead it maps to.
 
 Sources to scan (cite which one for every item):
-  PUBLIC: GeBIZ · Sesami · BCA Tenders Portal · LTA eProcurement ·
-  PUB eTender · HDB iTender · JTC eTender · all 17 town council websites ·
-  agency sites (NParks, NEA, SPF, SCDF, MOE, MOH cluster sites).
-  PRIVATE: SGX (REIT AEI disclosures) · REIT websites (CapitaLand, Mapletree,
-  Frasers, Keppel, Lendlease, Suntec, Starhill, ESR-LOGOS, Sabana, Paragon) ·
-  Developer sites (CDL, UOL, GuocoLand, Hong Leong, Far East, Allgreen) ·
-  Managing agents (Savills, Knight Frank, JLL, CBRE, Colliers, Edmund Tie,
-  Cushman & Wakefield) · Healthcare groups · Data-centre operators · REDAS /
-  SCAL / SCIC notices.
+  PUBLIC PORTALS:
+  • GeBIZ — gebiz.gov.sg (whole-of-government)
+  • Sesami — sesami.com.sg (private + consultancy-issued public)
+  • BCA Tenders Portal — bca.gov.sg/tendersnotices
+  • LTA eProcurement, PUB eTender, HDB iTender, JTC eTender
+  • All 17 town council websites — minor works, repaint, waterproofing
+  • Agency websites: NParks, NEA, SPF, SCDF, MOE, MOH (SingHealth / NHG / NUHS)
+
+  TRANSPORT / PORT / AIRPORT / UTILITY OPERATORS (high-volume R&R + WP buyers):
+  • PSA — psa.com.sg (Pasir Panjang, Tuas Mega Port — building works, R&R,
+    waterproofing of port facilities, gantry shed roofs, container yards)
+  • Jurong Port — jp.com.sg (similar scope)
+  • SMRT — smrt.com.sg/Procurement (depots, stations, OCC building works,
+    waterproofing of underground tunnels and stations)
+  • SBS Transit — sbstransit.com.sg (bus depots, interchange A&A, waterproofing)
+  • Tower Transit — towertransit.sg, Go-Ahead Singapore — go-aheadsingapore.com
+  • Changi Airport Group (CAG) — changiairport.com (terminal R&R, airside
+    works, waterproofing of taxiway buildings)
+  • SP Group — spgroup.com.sg (substation building works, leak repair)
+  • PUB facility works, NEWater plants — pub.gov.sg
+  • Sentosa Development Corporation — sentosa.com.sg
+
+  PRIVATE PORTALS / SOURCES:
+  • SGX announcements — sgx.com (REIT AEI, capex disclosures)
+  • REIT websites — CapitaLand, Mapletree, Frasers, Keppel, Lendlease, Suntec,
+    Starhill, ESR-LOGOS, Sabana, Paragon
+  • Developers — CDL, UOL, GuocoLand, Hong Leong, Far East, Allgreen
+  • Managing agents — Savills, Knight Frank, JLL, CBRE, Colliers, Edmund Tie,
+    Cushman & Wakefield (issue MCST + private tenders, esp. waterproofing /
+    R&R for condos and offices)
+  • Healthcare — Raffles Medical, Parkway, IHH, Thomson Medical
+  • Data-centre operators — Equinix, Digital Realty, ST Telemedia, KDDI, STACK
+  • REDAS / SCAL / SCIC notices.
 
 Format per item:
 🏛️ / 🏢 / 📰 [Buyer — headline]  |  workhead: CW01 / CR06 / etc.

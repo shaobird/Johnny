@@ -32,12 +32,14 @@ INTEL_BRIEFING_TIME = os.getenv("INTEL_BRIEFING_TIME", "07:30")
 NEWSLETTER_TIME = os.getenv("NEWSLETTER_TIME", "08:00")
 
 # BCA Contractors Registration System — the user's registered workheads.
-# Comma-separated. The construction newsletter agent uses this to filter
-# tenders to scope + grade-limit matches.
-# Grade letters drive the S$ filter (C3≈0.65M · C2≈1.3M · C1≈4M · B2≈13M · B1≈40M).
+# Comma-separated. Optionally append grade (e.g. "CW01-C1") so the agent
+# enforces tender-size limits per workhead.
+# Approx grade ceilings:
+#   CW grades — C3 ≈ 0.65M · C2 ≈ 1.3M · C1 ≈ 4M · B2 ≈ 13M · B1 ≈ 40M
+#   CR L grades — L1 ≈ 0.65M · L2 ≈ 1.3M · L3 ≈ 3M · L4 ≈ 13M · L5 ≈ 30M
 BCA_WORKHEADS = os.getenv(
     "BCA_WORKHEADS",
-    "CR06,CR09,CR13,CW01,FM01",  # Painting · Interior · Cleaning · GB · FM
+    "CR13-L1,CR09-L4,CW01-C1",  # Waterproofing · Repair & Redec · GB
 )
 
 # Max tender value to surface, in S$ millions. Override if you want to bid
