@@ -35,6 +35,7 @@ from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
+from agents.files import parse_file
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
@@ -179,6 +180,56 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text(f"Voice transcription failed: {e}")
 
 
+# ── Document handler ──────────────────────────────────────────────────────────
+
+async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Receive a file (Excel/CSV/PDF/text), parse it, send to Johnny for analysis."""
+    doc = update.message.document
+    if not doc:
+        return
+
+    caption = (update.message.caption or "").strip()
+    filename = doc.file_name or "uploaded_file"
+
+    await update.message.reply_text(f"📎 Got `{filename}`. Reading…", parse_mode="Markdown")
+
+    try:
+        # Download to temp file
+        tg_file = await doc.get_file()
+        suffix = os.path.splitext(filename)[1] or ".bin"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp_path = tmp.name
+        await tg_file.download_to_drive(tmp_path)
+
+        # Parse it
+        parsed = await asyncio.to_thread(parse_file, tmp_path)
+        os.unlink(tmp_path)
+
+        # Build the message for Johnny
+        instruction = caption or (
+            "Analyse this file. Give me the key insights, anomalies, and what I should "
+            "act on. Use tables where useful. Be concise."
+        )
+
+        prompt = (
+            f"The user uploaded a file named `{filename}`. Their request: {instruction}\n\n"
+            f"━━━ FILE CONTENTS ━━━\n{parsed}\n━━━━━━━━━━━━━━━━━━━━"
+        )
+
+        user_id = update.effective_user.id
+        history = _history.get(user_id, [])
+        reply = await asyncio.to_thread(johnny.chat, prompt, history)
+
+        history.append({"role": "user", "content": f"[Uploaded {filename}] {instruction}"})
+        history.append({"role": "assistant", "content": reply})
+        _history[user_id] = history[-_MAX_HISTORY:]
+
+        await _send_long(update, reply)
+
+    except Exception as e:
+        await update.message.reply_text(f"Failed to process file: {e}")
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _send_long(update: Update, text: str) -> None:
@@ -294,6 +345,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
 
     # Register command menu so they appear when user taps "/"
     app.post_init = _set_commands
