@@ -27,11 +27,29 @@ from agents.newsletter import (
     prepare_research_brief,
 )
 import memory as mem
-from config import ANTHROPIC_API_KEY
+from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 MAX_ITERATIONS = 15
+
+# Keywords that indicate the user's message likely needs an agent tool call.
+# If any of these appear, route to Anthropic (with tools). Otherwise → Gemini (free).
+_TOOL_KEYWORDS = (
+    "calendar", "meeting", "schedule", "today's events",
+    "fitness", "training", "workout", "run ", "running", "gym", "lift",
+    "forex", "currency", "trade", "market", "pair", "release",
+    "intel", "news", "briefing",
+    "email", "inbox", "gmail",
+    "save note", "remember this", "log ", "record ",
+    "newsletter", "brief",
+    "analyse this", "analyze this",
+)
+
+
+def _needs_anthropic(message: str) -> bool:
+    msg = message.lower()
+    return any(kw in msg for kw in _TOOL_KEYWORDS)
 
 
 # ── System prompt (rebuilt fresh each call so memory is always current) ───────
@@ -294,10 +312,50 @@ _HANDLERS = {
 def chat(message: str, history: list[dict] | None = None, use_opus: bool = False) -> str:
     """
     Send a message to Johnny and return his reply.
+
+    Routing:
+      - use_opus=True  → Anthropic Opus (briefings, complex synthesis)
+      - tool keywords  → Anthropic Sonnet (with all agent tools available)
+      - simple chat    → Gemini 2.5 Pro (free tier, no tools)
+
     Pass the prior conversation turns as `history` to maintain context.
     """
+    if not use_opus and GEMINI_API_KEY and not _needs_anthropic(message):
+        try:
+            return _chat_gemini(message, history or [])
+        except Exception as e:
+            print(f"[Chat] Gemini failed ({e}), falling back to Anthropic Sonnet...")
+
     messages = list(history or []) + [{"role": "user", "content": message}]
     return _run_loop(messages, use_opus=use_opus)
+
+
+def _chat_gemini(message: str, history: list[dict]) -> str:
+    """
+    Free chat via Gemini 2.5 Pro — no tools, but full memory context.
+    Used for simple conversation that doesn't need agent calls.
+    """
+    from google import genai
+    from google.genai import types as genai_types
+
+    client = genai.Client(api_key=GEMINI_API_KEY)
+
+    # Convert Anthropic-format history to Gemini format
+    contents = []
+    for turn in history:
+        role = "user" if turn["role"] == "user" else "model"
+        text = turn["content"] if isinstance(turn["content"], str) else str(turn["content"])
+        contents.append(genai_types.Content(role=role, parts=[genai_types.Part(text=text)]))
+    contents.append(genai_types.Content(role="user", parts=[genai_types.Part(text=message)]))
+
+    response = client.models.generate_content(
+        model="gemini-2.5-pro",
+        contents=contents,
+        config=genai_types.GenerateContentConfig(
+            system_instruction=_build_system_prompt(),
+        ),
+    )
+    return response.text or "(no response)"
 
 
 def daily_briefing() -> str:
