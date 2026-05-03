@@ -128,6 +128,22 @@ async def cmd_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await _send_long(update, reply)
 
 
+async def cmd_newsletter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Generate a newsletter research brief — intel + topic gap + top performers."""
+    angle = " ".join(context.args) if context.args else ""
+    await update.message.reply_text(
+        "📰 Preparing newsletter brief — pulling intel + topic history…\n"
+        "Takes 1-2 min ⏳"
+    )
+    reply = johnny.chat(
+        f"Run prepare_newsletter_brief with angle: \"{angle}\". "
+        "Then synthesise into 3 newsletter angle suggestions, each with: "
+        "headline, 1-line hook, key points to cover, why it'll resonate. "
+        "Avoid topics from the last 6 weeks."
+    )
+    await _send_long(update, reply)
+
+
 async def cmd_reflect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("📔 Reading your journal...")
     entries = mem.get_recent_journal(days=7)
@@ -343,6 +359,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("intel", cmd_intel))
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
+    app.add_handler(CommandHandler("newsletter", cmd_newsletter))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
@@ -361,4 +378,5 @@ async def _set_commands(app: Application) -> None:
         ("intel",    "AI, construction & macro briefing"),
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
+        ("newsletter", "Newsletter research brief"),
     ])

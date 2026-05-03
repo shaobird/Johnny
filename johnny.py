@@ -19,6 +19,13 @@ from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.training_loop import get_training_analysis, log_proposal, record_outcome
 from agents.gmail import get_email_summary
+from agents.newsletter import (
+    log_newsletter,
+    record_metrics as record_newsletter_metrics,
+    get_recent_topics,
+    get_top_performers,
+    prepare_research_brief,
+)
 import memory as mem
 from config import ANTHROPIC_API_KEY
 
@@ -201,6 +208,67 @@ _TOOLS = [
             "required": ["outcome", "metric_improved"],
         },
     },
+    {
+        "name": "log_newsletter",
+        "description": "Record a newsletter that was sent. Use after publishing.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title":      {"type": "string", "description": "Newsletter title or subject line."},
+                "topic":      {"type": "string", "description": "Main topic in 2-5 words (e.g. 'supplier costs', 'safety regs')."},
+                "key_points": {"type": "string", "description": "1-2 sentence summary of what was covered."},
+            },
+            "required": ["title", "topic"],
+        },
+    },
+    {
+        "name": "record_newsletter_metrics",
+        "description": "Attach open/click metrics to a previously logged newsletter.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title":   {"type": "string", "description": "The newsletter title to match."},
+                "opens":   {"type": "integer", "description": "Number of unique opens."},
+                "clicks":  {"type": "integer", "description": "Number of clicks."},
+                "sent_to": {"type": "integer", "description": "Total recipients (for rate calc)."},
+            },
+            "required": ["title", "opens", "clicks", "sent_to"],
+        },
+    },
+    {
+        "name": "get_recent_newsletter_topics",
+        "description": (
+            "List newsletter topics from the last 6-8 weeks so we don't repeat content. "
+            "Use before suggesting a new newsletter angle."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "weeks": {"type": "integer", "description": "Lookback window in weeks (default 8)."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "get_top_newsletters",
+        "description": "Return the highest-performing past newsletters by open rate.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "prepare_newsletter_brief",
+        "description": (
+            "Generate a full research brief for the next newsletter. "
+            "Pulls live intel briefing, recent topics covered, and top performers. "
+            "Takes 1-2 minutes (runs Gemini search). Use when planning a new newsletter."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "angle": {"type": "string", "description": "Optional angle or theme to focus on."},
+            },
+            "required": [],
+        },
+    },
 ]
 
 _HANDLERS = {
@@ -213,6 +281,11 @@ _HANDLERS = {
     "analyze_training":        lambda _:   get_training_analysis(),
     "log_training_proposal":   lambda inp: log_proposal(inp["proposal"], inp["variable"], inp["hypothesis"]),
     "record_training_outcome": lambda inp: record_outcome(inp["outcome"], inp["metric_improved"]),
+    "log_newsletter":            lambda inp: log_newsletter(inp["title"], inp["topic"], inp.get("key_points", "")),
+    "record_newsletter_metrics": lambda inp: record_newsletter_metrics(inp["title"], inp["opens"], inp["clicks"], inp["sent_to"]),
+    "get_recent_newsletter_topics": lambda inp: get_recent_topics(inp.get("weeks", 8)),
+    "get_top_newsletters":       lambda _:   get_top_performers(),
+    "prepare_newsletter_brief":  lambda inp: prepare_research_brief(inp.get("angle", "")),
 }
 
 
