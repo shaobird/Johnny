@@ -1,6 +1,6 @@
 """
 Construction Agent — Weekly Construction Business Intel
-Uses Claude Opus with web search + fetch to produce a weekly newsletter scoped
+Uses Claude Sonnet with web search + fetch to produce a weekly newsletter scoped
 to a Singapore-registered contractor holding:
   • CR13-L1  Waterproofing
   • CR09-L4  Repair & Redecoration
@@ -341,7 +341,7 @@ def _claude_search() -> str:
 
     for _ in range(40):
         response = client.messages.create(
-            model="claude-opus-4-7",
+            model="claude-sonnet-4-6",
             max_tokens=16000,
             thinking={"type": "adaptive"},
             tools=_SEARCH_TOOLS,
