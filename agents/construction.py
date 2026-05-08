@@ -1,7 +1,7 @@
 """
 Construction Agent — Weekly Construction Business Intel
-Uses Gemini (Google Search grounding) to produce a weekly newsletter scoped to a
-Singapore-registered contractor holding:
+Uses Claude Opus with web search + fetch to produce a weekly newsletter scoped
+to a Singapore-registered contractor holding:
   • CR13-L1  Waterproofing
   • CR09-L4  Repair & Redecoration
   • CW01-C1  General Building
@@ -12,7 +12,7 @@ Output sections:
   3. Tender pipeline, buyer-portal watchlist, three weekly actions
   4. Regulatory deadlines (rolling)
 
-Falls back to Claude web search if Gemini is unavailable.
+Falls back to Gemini Google Search grounding if Claude is unavailable.
 """
 
 import json
@@ -303,16 +303,16 @@ Then always include:
 
 def get_construction_briefing() -> str:
     """
-    Run a live Google Search via Gemini and return the weekly construction-business
-    newsletter. Falls back to Claude web search if Gemini is unavailable.
+    Generate the weekly construction-business newsletter using Claude Opus with
+    web search + fetch. Falls back to Gemini Google Search if Claude is unavailable.
     """
-    if GEMINI_API_KEY:
+    if ANTHROPIC_API_KEY:
         try:
-            return _gemini_search()
+            return _claude_search()
         except Exception as e:
-            print(f"[Construction] Gemini failed ({e}), falling back to Claude...")
+            print(f"[Construction] Claude failed ({e}), falling back to Gemini...")
 
-    return _claude_search()
+    return _gemini_search()
 
 
 def _gemini_search() -> str:
@@ -341,8 +341,8 @@ def _claude_search() -> str:
 
     for _ in range(40):
         response = client.messages.create(
-            model="claude-opus-4-6",
-            max_tokens=8096,
+            model="claude-opus-4-7",
+            max_tokens=16000,
             thinking={"type": "adaptive"},
             tools=_SEARCH_TOOLS,
             messages=messages,
