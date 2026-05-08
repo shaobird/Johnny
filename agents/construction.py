@@ -332,18 +332,26 @@ def _claude_search() -> str:
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     _SEARCH_TOOLS = [
-        {"type": "web_search_20260209", "name": "web_search"},
-        {"type": "web_fetch_20260209",  "name": "web_fetch"},
+        {"type": "web_search_20260209", "name": "web_search", "max_uses": 12},
+        {"type": "web_fetch_20260209",  "name": "web_fetch",  "max_uses": 6},
     ]
 
-    messages = [{"role": "user", "content": _build_prompt()}]
+    # Cache the prompt — the gov / private buyer registries and format spec
+    # are static, so every iteration of the tool loop reuses the cached prefix.
+    messages = [{
+        "role": "user",
+        "content": [{
+            "type": "text",
+            "text": _build_prompt(),
+            "cache_control": {"type": "ephemeral"},
+        }],
+    }]
     response = None
 
-    for _ in range(40):
+    for _ in range(15):
         response = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=16000,
-            thinking={"type": "adaptive"},
             tools=_SEARCH_TOOLS,
             messages=messages,
         )
