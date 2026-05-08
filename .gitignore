@@ -20,6 +20,10 @@ usage_log.json
 # Gmail runtime state — never commit
 seen_emails.json
 
+# Construction newsletter archive — runtime memory for the editor's
+# week-on-week dedupe; not source code.
+newsletters/
+
 # Google OAuth tokens
 token.pickle
 credentials.json

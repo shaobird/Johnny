@@ -33,6 +33,8 @@ SGT = ZoneInfo("Asia/Singapore")
 ST_FEED = "st_classifieds.json"
 GOV_BUYERS = "gov_buyers.json"
 PRIVATE_BUYERS = "private_buyers.json"
+NEWSLETTERS_DIR = "newsletters"
+HISTORY_WEEKS = 3                # how many past newsletters the editor sees
 
 
 # ── Date / data loaders ───────────────────────────────────────────────────────
@@ -400,7 +402,45 @@ def _parallel_claude() -> str:
             except Exception as e:
                 results[name] = f"[{name} section failed: {e}]"
 
-    return _editor_pass(week, results)
+    final = _editor_pass(week, results)
+    _save_newsletter(week, final)
+    return final
+
+
+def _load_recent_newsletters(n: int = HISTORY_WEEKS) -> str:
+    """Return the most recent N newsletters concatenated, or empty if none."""
+    if not os.path.isdir(NEWSLETTERS_DIR):
+        return ""
+    files = sorted(
+        (f for f in os.listdir(NEWSLETTERS_DIR) if f.endswith(".md")),
+        reverse=True,
+    )[:n]
+    if not files:
+        return ""
+    chunks = []
+    for fname in files:
+        try:
+            with open(os.path.join(NEWSLETTERS_DIR, fname)) as f:
+                chunks.append(f"--- {fname} ---\n{f.read()}")
+        except Exception:
+            continue
+    return "\n\n".join(chunks)
+
+
+def _save_newsletter(week_label: str, content: str) -> None:
+    """Persist the final newsletter so future runs can detect repeats."""
+    os.makedirs(NEWSLETTERS_DIR, exist_ok=True)
+    # Filename: yyyy-mm-dd derived from "Fri DD Mon YYYY"
+    try:
+        dt = datetime.strptime(week_label, "Fri %d %b %Y")
+        fname = dt.strftime("%Y-%m-%d") + ".md"
+    except Exception:
+        fname = datetime.now(SGT).strftime("%Y-%m-%d") + ".md"
+    try:
+        with open(os.path.join(NEWSLETTERS_DIR, fname), "w") as f:
+            f.write(content)
+    except Exception as e:
+        print(f"[Construction] Could not save newsletter ({e}).")
 
 
 def _editor_pass(week: str, sections: dict[str, str]) -> str:
@@ -420,24 +460,54 @@ def _editor_pass(week: str, sections: dict[str, str]) -> str:
         f"=== TENDERS SECTION (raw) ===\n{sections.get('tenders','')}",
         f"=== REGULATORY SECTION (raw) ===\n{sections.get('regulatory','')}",
     ])
+    history = _load_recent_newsletters()
+    history_block = (
+        f"━━━ PREVIOUS NEWSLETTERS — DO NOT REPEAT THIS CONTENT ━━━\n{history}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        if history else
+        "(No prior newsletters on file — nothing to dedupe against.)"
+    )
 
     editor_prompt = f"""\
 You are the EDITOR for a weekly construction-business newsletter going to
-colleagues and an industry community in Singapore. Four sub-agents have just
-produced raw drafts of their sections. Your job:
+colleagues and an industry community in Singapore. Four sub-agents have
+produced raw drafts. Your job is to polish, dedupe, and stitch — not to add.
 
-1. Sanity-check each section for tone, redundancy, and obviously dubious claims
-   (vendor names that read fake, URLs that look made-up, contradictions
-   between sections). Quietly drop or flag anything that fails the smell test.
-2. Remove cross-section redundancy. If safety and regulatory both mention the
-   MOM Heightened Safety Period, keep it in regulatory only.
-3. Write a 3-bullet "This week at a glance" opener that crosses sections —
-   the single most important thing from tech, the single most important
-   tender / pipeline action, and one safety or regulatory flag worth knowing.
-4. Stitch into a polished final newsletter using the exact header below.
+━━━ EDITORIAL STANDARDS ━━━
+1. GRAMMAR — fix spelling, punctuation, subject-verb agreement, article use,
+   and Singapore English conventions (S$, SGT, BCA, MOM, MCST). Capitalise
+   product and agency names correctly (Sika, JTC, BCA CRS).
+2. CLARITY — every bullet must be one clear sentence. Strip filler words
+   ("essentially", "basically", "really"), passive voice, and adverb stacking.
+   If a sentence reads ambiguous, tighten or cut it.
+3. CONCISION — target 1-2 sentences per bullet. If a worker wrote 4 sentences
+   where 2 would do, condense.
+4. CONSISTENCY — keep tone tight, factual, "why it matters to us". No
+   marketing-speak. No emojis except the established section headers.
+5. SANITY — drop vendor names that read fake, URLs that look made-up, or
+   internal contradictions. Quietly remove. Do not flag in the output.
 
-DO NOT add new content. DO NOT invent vendors, tenders, or incidents.
-Only edit, prune, and stitch what the workers gave you.
+━━━ NO-REPEAT RULES (vs. the prior newsletters below) ━━━
+• TECH section — hard rule. If a product / vendor was featured in the last
+  3 weeks, REMOVE it and ask one of the lower-ranked items to take its place.
+  If the worker only surfaced repeats, output fewer than 5 items rather than
+  recycle. Quality over quota.
+• TENDERS — open tenders may legitimately persist week-to-week. If a tender
+  appeared previously and is STILL OPEN, label it "🔁 Continued tracking —
+  closes [date]" rather than rewriting the description. Newly surfaced
+  tenders carry no label.
+• SAFETY — the trade-specific bullet list is evergreen and may repeat. The
+  opening line and any "🆕 This week's incident note" must be fresh.
+• REGULATORY — the rolling deadlines list is evergreen and may repeat. The
+  "🆕 This week" line must be fresh; if the same change is mentioned again,
+  drop it.
+
+━━━ STRUCTURAL RULES ━━━
+• Write a 3-bullet "👀 THIS WEEK AT A GLANCE" opener crossing sections — the
+  top tech signal, the top tender / pipeline action, the top safety or
+  regulatory flag.
+• Keep each section's existing emoji header bar.
+• DO NOT add new content. DO NOT invent vendors, tenders, or incidents.
 
 ━━━ FINAL OUTPUT FORMAT ━━━
 
@@ -450,18 +520,19 @@ Week ending {week} · Scope: Waterproofing (CR13-L1) · Repair & Redecoration (C
 • [Top tender / pipeline action — one line]
 • [Top safety or regulatory flag — one line]
 
-[then the four edited sections, each with its original header bar:]
-[tech section]
-[safety section]
-[tenders section]
-[regulatory section]
+[edited tech section]
+[edited safety section]
+[edited tenders section]
+[edited regulatory section]
 
 End with one line:
 "Questions or additions for next week — reply to this email."
 
-━━━ RAW WORKER DRAFTS ━━━
+{history_block}
+
+━━━ THIS WEEK'S RAW WORKER DRAFTS ━━━
 {raw}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Output the final newsletter only. No preamble. No editor's note."""
 
