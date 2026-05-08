@@ -18,3 +18,8 @@ apscheduler>=3.10
 
 # Browser automation — required for MrktEdge login + scraping
 playwright>=1.40
+
+# Library / file manager web server
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9

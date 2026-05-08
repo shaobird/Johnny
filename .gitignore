@@ -34,3 +34,6 @@ venv/
 
 # OS
 .DS_Store
+
+# Library file manager — local storage, never commit
+library_data/
