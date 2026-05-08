@@ -1,16 +1,19 @@
 """
 Construction Agent — Weekly Construction Business Intel
 
-Parallel sub-agent architecture. Four focused workers run concurrently and
-their outputs are stitched together with a shared header:
+Parallel sub-agent + editor architecture:
 
-  • tech      — top 5 relevant products / systems this week
-  • safety    — toolbox talks + WSH/MOM incident scan
-  • tenders   — GeBIZ + ST Classifieds + Tenderboard + Ariba pipeline
-  • regulatory — BCA / MOM / SCDF / IRAS rolling deadlines + this week's changes
+  Workers (run concurrently, ~30-45s):
+    • tech       — top 5 relevant products / systems this week
+    • safety     — toolbox talks + WSH/MOM incident scan
+    • tenders    — GeBIZ + ST Classifieds + Tenderboard + Ariba pipeline
+    • regulatory — BCA / MOM / SCDF / IRAS rolling deadlines
 
-Each worker uses Claude Sonnet with web_search + web_fetch and a search
-budget tuned to its section. Wall-time = the slowest section, not the sum.
+  Editor (runs after workers finish, ~10s):
+    • Reviews each section for factual integrity and tone
+    • Removes cross-section redundancy
+    • Writes a "This week at a glance" opener
+    • Outputs the polished newsletter ready to send to colleagues + community
 
 Falls back to a single-call Gemini run if Claude is unavailable.
 """
@@ -376,11 +379,6 @@ def get_construction_briefing() -> str:
 
 def _parallel_claude() -> str:
     week = _week_ending_friday()
-    header = (
-        "🏗️ WEEKLY CONSTRUCTION INTEL\n"
-        f"Week ending {week} · Scope: Waterproofing (CR13-L1) · "
-        "Repair & Redecoration (CR09-L4) · General Building (CW01-C1)"
-    )
 
     sections = [
         ("tech",       _tech_prompt(),       8, 4),
@@ -402,13 +400,93 @@ def _parallel_claude() -> str:
             except Exception as e:
                 results[name] = f"[{name} section failed: {e}]"
 
-    return "\n\n".join([
-        header,
-        results.get("tech", ""),
-        results.get("safety", ""),
-        results.get("tenders", ""),
-        results.get("regulatory", ""),
+    return _editor_pass(week, results)
+
+
+def _editor_pass(week: str, sections: dict[str, str]) -> str:
+    """
+    Final editor pass — reviews the 4 worker outputs, sanity-checks each,
+    removes cross-section redundancy, writes a "This week at a glance"
+    opener, and stitches into the final newsletter.
+
+    No web tools — this is a polishing pass only. Fast (~10s).
+    If the editor call fails, falls back to plain concatenation.
+    """
+    import anthropic
+
+    raw = "\n\n".join([
+        f"=== TECH SECTION (raw) ===\n{sections.get('tech','')}",
+        f"=== SAFETY SECTION (raw) ===\n{sections.get('safety','')}",
+        f"=== TENDERS SECTION (raw) ===\n{sections.get('tenders','')}",
+        f"=== REGULATORY SECTION (raw) ===\n{sections.get('regulatory','')}",
     ])
+
+    editor_prompt = f"""\
+You are the EDITOR for a weekly construction-business newsletter going to
+colleagues and an industry community in Singapore. Four sub-agents have just
+produced raw drafts of their sections. Your job:
+
+1. Sanity-check each section for tone, redundancy, and obviously dubious claims
+   (vendor names that read fake, URLs that look made-up, contradictions
+   between sections). Quietly drop or flag anything that fails the smell test.
+2. Remove cross-section redundancy. If safety and regulatory both mention the
+   MOM Heightened Safety Period, keep it in regulatory only.
+3. Write a 3-bullet "This week at a glance" opener that crosses sections —
+   the single most important thing from tech, the single most important
+   tender / pipeline action, and one safety or regulatory flag worth knowing.
+4. Stitch into a polished final newsletter using the exact header below.
+
+DO NOT add new content. DO NOT invent vendors, tenders, or incidents.
+Only edit, prune, and stitch what the workers gave you.
+
+━━━ FINAL OUTPUT FORMAT ━━━
+
+🏗️ WEEKLY CONSTRUCTION INTEL
+Week ending {week} · Scope: Waterproofing (CR13-L1) · Repair & Redecoration (CR09-L4) · General Building (CW01-C1)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👀 THIS WEEK AT A GLANCE
+• [Top tech signal — one line]
+• [Top tender / pipeline action — one line]
+• [Top safety or regulatory flag — one line]
+
+[then the four edited sections, each with its original header bar:]
+[tech section]
+[safety section]
+[tenders section]
+[regulatory section]
+
+End with one line:
+"Questions or additions for next week — reply to this email."
+
+━━━ RAW WORKER DRAFTS ━━━
+{raw}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Output the final newsletter only. No preamble. No editor's note."""
+
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8000,
+            messages=[{"role": "user", "content": editor_prompt}],
+        )
+        return "\n".join(b.text for b in response.content if b.type == "text").strip()
+    except Exception as e:
+        print(f"[Construction] Editor pass failed ({e}), falling back to raw stitch...")
+        header = (
+            "🏗️ WEEKLY CONSTRUCTION INTEL\n"
+            f"Week ending {week} · Scope: Waterproofing (CR13-L1) · "
+            "Repair & Redecoration (CR09-L4) · General Building (CW01-C1)"
+        )
+        return "\n\n".join([
+            header,
+            sections.get("tech", ""),
+            sections.get("safety", ""),
+            sections.get("tenders", ""),
+            sections.get("regulatory", ""),
+        ])
 
 
 def _gemini_fallback() -> str:
