@@ -18,3 +18,6 @@ apscheduler>=3.10
 
 # Browser automation — required for MrktEdge login + scraping
 playwright>=1.40
+
+# Gladys — embeddings for vector memory (optional, only used if OPENAI_API_KEY is set)
+openai>=1.0
