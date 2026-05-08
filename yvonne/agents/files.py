@@ -1,9 +1,9 @@
 """
-File management sub-agent — Gladys's workspace.
+File management sub-agent — Gladys's workspace (managed by Yvonne).
 
-A single sandboxed directory under data/workspace/. The founder can list,
-read, write, and search files there (proposals, policy PDFs converted to
-text, client notes, scripts). All paths are resolved relative to WORKSPACE_DIR
+A single sandboxed directory under data/workspace/. Yvonne can list, read,
+write, and search files there (proposals, policy PDFs converted to text,
+client notes, scripts). All paths are resolved relative to WORKSPACE_DIR
 and any path that escapes it is refused.
 """
 

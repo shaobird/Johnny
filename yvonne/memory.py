@@ -1,8 +1,8 @@
 """
-Gladys's memory layer.
+Yvonne's memory layer (Gladys is the human user).
 
 Two stores:
-  • profile.json — structured facts Gladys teaches the founder (name, products
+  • profile.json — structured facts Gladys teaches Yvonne (name, products
     she sells, work style, preferences, hard rules). Read into the system
     prompt every turn.
   • vector_store.jsonl — long-tail recall. Each entry is {ts, kind, text,
@@ -10,7 +10,7 @@ Two stores:
     interactions. Falls back to keyword search if embeddings aren't
     configured.
 
-The founder writes to both. Sub-agents read from both.
+Yvonne (the founder agent) writes to both. Sub-agents read from both.
 """
 
 from __future__ import annotations
@@ -100,7 +100,7 @@ def add_founder_note(note: str) -> str:
 
 
 def get_context() -> str:
-    """Return a compact text summary of what the founder knows about Gladys."""
+    """Return a compact text summary of what Yvonne knows about Gladys."""
     data = load_profile()
     sections: list[str] = []
 
@@ -160,7 +160,7 @@ def _embed(text: str) -> list[float] | None:
         resp = client.embeddings.create(model=EMBEDDING_MODEL, input=text)
         return resp.data[0].embedding
     except Exception as e:
-        print(f"[gladys.memory] embed failed: {e}")
+        print(f"[yvonne.memory] embed failed: {e}")
         return None
 
 

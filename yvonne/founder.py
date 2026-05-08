@@ -1,14 +1,14 @@
 """
-Gladys's founder agent.
+Yvonne — Gladys's founder agent.
 
-The founder is the only agent Gladys talks to. Its job:
+Yvonne is the only agent Gladys talks to. Her job:
   1. Build a relationship — get to know Gladys, learn how she works, capture
      her preferences into profile.json and the vector store.
   2. Delegate — when a task fits a sub-agent (clients, policies, follow-ups,
      email drafts, files), call it via tools.
   3. Review — every sub-agent output is checked before reaching Gladys.
      Drafts get critiqued and tightened. Data lookups get sanity-checked.
-     If something looks off, the founder calls the sub-agent again or asks
+     If something looks off, Yvonne calls the sub-agent again or asks
      Gladys for clarification.
   4. Remember — patterns, preferences, and decisions get saved to memory so
      the next conversation starts smarter.
@@ -28,6 +28,7 @@ from .agents import policies as policies_agent
 from .agents import followups as followups_agent
 from .agents import email_drafter
 from .agents import files as files_agent
+from .agents import improver
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 MAX_ITERATIONS = 15
@@ -36,10 +37,12 @@ MAX_ITERATIONS = 15
 def _build_system_prompt() -> str:
     profile = mem.get_context()
     return f"""\
-You are Gladys's Founder Agent — her personal AI chief of staff. Gladys is an
-insurance agent. You exist to make her work easier, sharper, and more
-consistent. You are the ONLY agent she talks to. Behind you are specialist
-sub-agents you delegate to.
+You are Yvonne — Gladys's personal AI chief of staff and founder agent.
+Gladys is an insurance agent. You exist to make her work easier, sharper,
+and more consistent. You are the ONLY agent she talks to. Behind you are
+specialist sub-agents you delegate to.
+
+Your name is Yvonne. Introduce yourself by name when she asks who you are.
 
 ━━━ HOW YOU SPEAK TO GLADYS ━━━
 • Warm but efficient. She's busy. Get to the point.
@@ -71,7 +74,17 @@ Do not interrogate. Weave the questions into normal conversation.
 • draft_email  — Drafts emails in Gladys's voice (LLM-driven)
 • files_*      — Read/write files in Gladys's workspace
 • remember / recall — Long-term semantic memory
+• propose_improvements / list_improvement_proposals / mark_improvement_proposal
+              — Self-improvement: propose new functionality, then wait for
+                Gladys's approval before anything is built
 ━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━ SELF-IMPROVEMENT (do not auto-apply) ━━━
+You can run propose_improvements when Gladys asks "what should we add?" or
+when you've accumulated meaningful new evidence. NEVER act on a proposal
+yourself — surface the ideas, get her reaction, and only mark them
+approved/rejected/built when she tells you to. Building is a human decision.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ REVIEW EVERY SUB-AGENT OUTPUT ━━━
 Sub-agents are not infallible. Before you show ANY sub-agent output to
@@ -117,7 +130,7 @@ _TOOLS = [
     },
     {
         "name": "add_rule",
-        "description": "Add a hard rule Gladys wants the founder to always honour.",
+        "description": "Add a hard rule Gladys wants Yvonne to always honour.",
         "input_schema": {
             "type": "object",
             "properties": {"rule": {"type": "string"}},
@@ -332,6 +345,46 @@ _TOOLS = [
             "required": ["query"],
         },
     },
+    {
+        "name": "propose_improvements",
+        "description": (
+            "Run the self-improvement agent. It looks at recent memories and "
+            "proposes 1-3 new sub-agents/tools/automations. Proposals are "
+            "saved as 'pending' — nothing is built until Gladys approves."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "days": {"type": "integer", "description": "Lookback window in days (default 7)."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "list_improvement_proposals",
+        "description": "List improvement proposals, optionally filtered by status (pending|approved|rejected|built).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "status": {"type": "string"},
+                "limit": {"type": "integer"},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "mark_improvement_proposal",
+        "description": "Set the status of an improvement proposal — only do this when Gladys explicitly tells you to.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "proposal_id": {"type": "string"},
+                "status": {"type": "string", "enum": ["pending", "approved", "rejected", "built"]},
+                "note": {"type": "string"},
+            },
+            "required": ["proposal_id", "status"],
+        },
+    },
 ]
 
 
@@ -394,6 +447,17 @@ def _call_tool(name: str, args: dict) -> str:
         return files_agent.append_file(args["path"], args["content"])
     if name == "files_search":
         return files_agent.search_files(args["query"])
+
+    if name == "propose_improvements":
+        return improver.propose(days=args.get("days", 7))
+    if name == "list_improvement_proposals":
+        return improver.list_proposals(
+            status=args.get("status"), limit=args.get("limit", 20),
+        )
+    if name == "mark_improvement_proposal":
+        return improver.mark(
+            args["proposal_id"], args["status"], args.get("note", ""),
+        )
 
     return f"Unknown tool: {name}"
 

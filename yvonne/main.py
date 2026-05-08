@@ -1,9 +1,9 @@
 """
-Entry point for Gladys.
+Entry point for Yvonne (Gladys's personal AI assistant).
 
-    python -m gladys.main
+    python -m yvonne.main
 
-Requires GLADYS_TELEGRAM_BOT_TOKEN and ANTHROPIC_API_KEY in .env.
+Requires YVONNE_TELEGRAM_BOT_TOKEN and ANTHROPIC_API_KEY in .env.
 """
 
 import asyncio
@@ -24,7 +24,7 @@ async def run() -> None:
         await app.initialize()
         await app.start()
         await app.updater.start_polling(drop_pending_updates=True)
-        log.info("Gladys is online.")
+        log.info("Yvonne is online.")
         try:
             await asyncio.Event().wait()
         except (KeyboardInterrupt, SystemExit):

@@ -20,8 +20,8 @@ usage_log.json
 # Gmail runtime state — never commit
 seen_emails.json
 
-# Gladys runtime data — client info, profile, vector store, workspace
-gladys/data/
+# Yvonne runtime data — Gladys's profile, clients, vector store, workspace
+yvonne/data/
 
 # Google OAuth tokens
 token.pickle

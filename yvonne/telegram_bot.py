@@ -1,4 +1,4 @@
-"""Telegram front-end for Gladys's founder agent."""
+"""Telegram front-end for Yvonne (Gladys's founder agent)."""
 
 from __future__ import annotations
 
@@ -15,7 +15,8 @@ from telegram.ext import (
 
 from . import founder
 from . import memory as mem
-from .config import GLADYS_TELEGRAM_BOT_TOKEN
+from .agents import improver
+from .config import YVONNE_TELEGRAM_BOT_TOKEN
 
 _history: dict[int, list[dict]] = {}
 _MAX_HISTORY = 30
@@ -24,16 +25,18 @@ _MAX_HISTORY = 30
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id
     await update.message.reply_text(
-        "Hi Gladys — I'm your founder agent.\n\n"
+        "Hi Gladys — I'm Yvonne, your personal AI assistant.\n\n"
         f"Your chat ID is: {chat_id}\n\n"
         "Just talk to me normally. I'll learn how you work, keep track of "
         "your clients, your policies, your follow-ups, and draft things in "
         "your voice.\n\n"
         "Commands:\n"
-        "  /today    — what's due today\n"
-        "  /clients  — list clients on file\n"
-        "  /reset    — clear this chat's short-term history\n"
-        "  /forget   — DOES NOT delete memory; clears in-session history only"
+        "  /today      — what's due today\n"
+        "  /clients    — list clients on file\n"
+        "  /improve    — propose new functionality (you approve before any build)\n"
+        "  /proposals  — review pending improvement proposals\n"
+        "  /reset      — clear this chat's short-term history\n"
+        "  /forget     — DOES NOT delete memory; clears in-session history only"
     )
 
 
@@ -59,6 +62,27 @@ async def cmd_clients(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         founder.chat, "List my clients on file.", history,
     )
     await _send_long(update, reply)
+
+
+async def cmd_improve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    days = 7
+    if context.args:
+        try:
+            days = int(context.args[0])
+        except ValueError:
+            pass
+    await update.message.reply_text(
+        f"📐 Looking at the last {days} days for improvement ideas… "
+        "I'll propose, you decide. Nothing gets built without your approval."
+    )
+    summary = await asyncio.to_thread(improver.propose, days)
+    await _send_long(update, summary)
+
+
+async def cmd_proposals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    status = context.args[0] if context.args else "pending"
+    text = await asyncio.to_thread(improver.list_proposals, status)
+    await _send_long(update, text)
 
 
 async def cmd_reset(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -88,14 +112,16 @@ async def _send_long(update: Update, text: str) -> None:
 
 
 def build_app() -> Application:
-    if not GLADYS_TELEGRAM_BOT_TOKEN:
+    if not YVONNE_TELEGRAM_BOT_TOKEN:
         raise RuntimeError(
-            "GLADYS_TELEGRAM_BOT_TOKEN not set — add it to .env before running."
+            "YVONNE_TELEGRAM_BOT_TOKEN not set — add it to .env before running."
         )
-    app = Application.builder().token(GLADYS_TELEGRAM_BOT_TOKEN).build()
+    app = Application.builder().token(YVONNE_TELEGRAM_BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("today", cmd_today))
     app.add_handler(CommandHandler("clients", cmd_clients))
+    app.add_handler(CommandHandler("improve", cmd_improve))
+    app.add_handler(CommandHandler("proposals", cmd_proposals))
     app.add_handler(CommandHandler("reset", cmd_reset))
     app.add_handler(CommandHandler("forget", cmd_reset))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -107,5 +133,7 @@ async def _set_commands(app: Application) -> None:
     await app.bot.set_my_commands([
         ("today", "What's due today"),
         ("clients", "List clients on file"),
+        ("improve", "Propose new functionality (you approve)"),
+        ("proposals", "Review pending improvement proposals"),
         ("reset", "Clear short-term chat history"),
     ])

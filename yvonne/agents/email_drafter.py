@@ -1,8 +1,8 @@
 """
 Email drafting sub-agent — runs its own focused Claude call.
 
-The founder hands it the goal + context. It returns a draft. The founder
-reviews the draft (tone, accuracy, Gladys's voice) before showing it to her.
+Yvonne hands it the goal + context. It returns a draft. Yvonne reviews
+the draft (tone, accuracy, Gladys's voice) before showing it to her.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ def draft_email(recipient: str, goal: str, context: str = "") -> str:
         f"Goal of the email: {goal}\n\n"
         f"━━ Gladys's profile ━━\n{profile}\n\n"
         f"━━ Relevant past notes ━━\n{voice_hits}\n\n"
-        f"━━ Extra context from founder ━━\n{context or '(none)'}"
+        f"━━ Extra context from Yvonne ━━\n{context or '(none)'}"
     )
 
     resp = _client.messages.create(
