@@ -36,6 +36,7 @@ from agents.intel import get_intel_briefing
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from agents.files import parse_file
+from agents import sally
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
@@ -142,6 +143,40 @@ async def cmd_newsletter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         "Avoid topics from the last 6 weeks."
     )
     await _send_long(update, reply)
+
+
+async def cmd_draft(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Ask Sally to draft a newsletter on a given angle."""
+    angle = " ".join(context.args)
+    if not angle:
+        await update.message.reply_text("Usage: /draft <angle>  — e.g. /draft AI agents in construction")
+        return
+    await update.message.reply_text("✍️ Sally is drafting…")
+    reply = johnny.chat(
+        f"Use sally_draft_newsletter with angle: \"{angle}\". "
+        "Then return the draft to me formatted as:\n"
+        "TITLE: ...\nHOOK: ...\n\n<body>\n\nKEY POINTS: ..."
+    )
+    await _send_long(update, reply)
+
+
+async def cmd_polish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Ask Sally to polish text. /polish <intent> <text>  — intent optional."""
+    if not context.args:
+        await update.message.reply_text(
+            "Usage: /polish [tighten|punchier|shorter|clarify|headline] <text>"
+        )
+        return
+    first = context.args[0].lower()
+    if first in {"tighten", "punchier", "shorter", "clarify", "headline"}:
+        intent, text = first, " ".join(context.args[1:])
+    else:
+        intent, text = "tighten", " ".join(context.args)
+    if not text:
+        await update.message.reply_text("Need text to polish.")
+        return
+    polished = sally.polish(text, intent=intent)
+    await _send_long(update, polished)
 
 
 async def cmd_reflect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -360,6 +395,8 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(CommandHandler("newsletter", cmd_newsletter))
+    app.add_handler(CommandHandler("draft", cmd_draft))
+    app.add_handler(CommandHandler("polish", cmd_polish))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
@@ -379,4 +416,6 @@ async def _set_commands(app: Application) -> None:
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
         ("newsletter", "Newsletter research brief"),
+        ("draft",      "Sally drafts a newsletter on an angle"),
+        ("polish",     "Sally polishes text (tighten/punchier/shorter/clarify/headline)"),
     ])

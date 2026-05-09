@@ -26,6 +26,7 @@ from agents.newsletter import (
     get_top_performers,
     prepare_research_brief,
 )
+from agents import sally
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -44,6 +45,7 @@ _TOOL_KEYWORDS = (
     "save note", "remember this", "log ", "record ",
     "newsletter", "brief",
     "analyse this", "analyze this",
+    "draft", "polish", "rewrite", "tighten", "headline", "subject line", "sally",
 )
 
 
@@ -287,6 +289,57 @@ _TOOLS = [
             "required": [],
         },
     },
+    {
+        "name": "sally_draft_newsletter",
+        "description": (
+            "Delegate to Sally (Chief of Marketing & Comms) to write a full newsletter draft. "
+            "Use when the user wants the actual draft, not just angle suggestions. "
+            "Returns title, hook, body and key points."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "angle":  {"type": "string", "description": "The angle / topic for the newsletter."},
+                "brief":  {"type": "string", "description": "Optional research notes or bullet points to incorporate."},
+                "length": {"type": "string", "enum": ["short", "medium", "long"], "description": "Target length. Default medium."},
+            },
+            "required": ["angle"],
+        },
+    },
+    {
+        "name": "sally_polish",
+        "description": (
+            "Delegate to Sally to polish a piece of text. Use when the user asks to tighten, "
+            "rewrite, sharpen, or generate a headline/subject line."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "text":   {"type": "string", "description": "The text to polish."},
+                "intent": {"type": "string", "enum": ["tighten", "punchier", "shorter", "clarify", "headline"],
+                           "description": "What kind of polish. Default 'tighten'."},
+            },
+            "required": ["text"],
+        },
+    },
+    {
+        "name": "sally_ship_newsletter",
+        "description": (
+            "After the user approves a draft, archive it to the library and log it for "
+            "performance tracking. Use only when the user has explicitly approved publishing."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title":      {"type": "string"},
+                "body":       {"type": "string", "description": "Full newsletter body."},
+                "topic":      {"type": "string", "description": "Topic in 2-5 words."},
+                "key_points": {"type": "string", "description": "TL;DR, semicolon-separated."},
+                "source":     {"type": "string", "description": "Brand/source label. Default 'alter_ego'."},
+            },
+            "required": ["title", "body"],
+        },
+    },
 ]
 
 _HANDLERS = {
@@ -304,6 +357,16 @@ _HANDLERS = {
     "get_recent_newsletter_topics": lambda inp: get_recent_topics(inp.get("weeks", 8)),
     "get_top_newsletters":       lambda _:   get_top_performers(),
     "prepare_newsletter_brief":  lambda inp: prepare_research_brief(inp.get("angle", "")),
+    "sally_draft_newsletter":    lambda inp: json.dumps(sally.draft_newsletter(
+                                     inp["angle"], inp.get("brief"), inp.get("length", "medium")
+                                 )),
+    "sally_polish":              lambda inp: sally.polish(inp["text"], inp.get("intent", "tighten")),
+    "sally_ship_newsletter":     lambda inp: sally.ship_newsletter(
+                                     inp["title"], inp["body"],
+                                     source=inp.get("source", "alter_ego"),
+                                     topic=inp.get("topic", ""),
+                                     key_points=inp.get("key_points", ""),
+                                 ),
 }
 
 
