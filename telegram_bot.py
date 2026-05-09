@@ -130,17 +130,38 @@ async def cmd_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def cmd_newsletter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Generate a newsletter research brief — intel + topic gap + top performers."""
+    """
+    Newsletter command.
+      /newsletter             — return 3 angle suggestions (research only)
+      /newsletter <angle>     — research + Sally drafts the full newsletter
+    """
     angle = " ".join(context.args) if context.args else ""
+
+    if not angle:
+        await update.message.reply_text(
+            "📰 Pulling intel + topic history for angle suggestions…\n"
+            "Takes 1-2 min ⏳"
+        )
+        reply = johnny.chat(
+            "Run prepare_newsletter_brief with no angle. "
+            "Then synthesise into 3 newsletter angle suggestions, each with: "
+            "headline, 1-line hook, key points to cover, why it'll resonate. "
+            "Avoid topics from the last 6 weeks. "
+            "End with: \"Reply with /draft <angle> to have Sally write the full piece.\""
+        )
+        await _send_long(update, reply)
+        return
+
     await update.message.reply_text(
-        "📰 Preparing newsletter brief — pulling intel + topic history…\n"
-        "Takes 1-2 min ⏳"
+        f"📰 Researching \"{angle}\" then handing to Sally to draft…\n"
+        "Takes 2-3 min ⏳"
     )
     reply = johnny.chat(
         f"Run prepare_newsletter_brief with angle: \"{angle}\". "
-        "Then synthesise into 3 newsletter angle suggestions, each with: "
-        "headline, 1-line hook, key points to cover, why it'll resonate. "
-        "Avoid topics from the last 6 weeks."
+        f"Then call sally_draft_newsletter with that angle and pass the brief "
+        "as the `brief` argument so Sally can incorporate the research. "
+        "Return Sally's draft to me formatted as:\n"
+        "TITLE: ...\nHOOK: ...\n\n<body>\n\nKEY POINTS: ..."
     )
     await _send_long(update, reply)
 
@@ -415,7 +436,7 @@ async def _set_commands(app: Application) -> None:
         ("intel",    "AI, construction & macro briefing"),
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
-        ("newsletter", "Newsletter research brief"),
-        ("draft",      "Sally drafts a newsletter on an angle"),
+        ("newsletter", "Brief (no args) or brief+Sally draft (with angle)"),
+        ("draft",      "Sally drafts a newsletter on an angle (no research)"),
         ("polish",     "Sally polishes text (tighten/punchier/shorter/clarify/headline)"),
     ])
