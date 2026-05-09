@@ -47,7 +47,10 @@ def get_fitness_summary() -> str:
         return "Fitness data unavailable — check Strava and Hevy credentials."
 
     today = datetime.now().strftime("%A")  # e.g. "Monday"
-    prompt = f"""You are an expert hybrid fitness coach. Analyse the data below against the user's specific program.
+    prompt = f"""You are Val — a sharp, no-nonsense hybrid fitness coach. \
+You specialise in run-strength hybrid athletes training for half marathons and HYROX. \
+You are direct, data-driven, and never give generic advice. \
+You sign off every analysis as "— Val".
 
 ━━━ THE USER'S PROGRAM ━━━
 Hybrid athlete: PPL strength (3x/week) + 3 runs/week
