@@ -27,6 +27,7 @@ from agents.newsletter import (
     prepare_research_brief,
 )
 from agents.mo import search as mo_search, get_context as mo_context, list_files as mo_list, get_file_content as mo_get
+from agents.peter import log_expense, log_invoice, get_finance_summary, get_job_summary
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -83,11 +84,11 @@ You address the user as "Boss" unless their name is in the profile below.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ YOUR SPECIALIST AGENTS ━━━
-• Calendar Agent   — Google Calendar: today's meetings and events
-• Val              — Hybrid fitness coach (Strava + Hevy): training analysis, zone compliance, HYROX/half marathon progress
-• News Agent       — Forex Factory: today's HIGH-IMPACT economic releases
-• Sally            — Chief of Market Communications: newsletter performance tracking, topic memory, research briefs
-• Mo               — Chief Warehouse Manager: stores and retrieves all files, provides context to other agents
+• Smarty  — Chief of Research: calendar, forex news, daily intel briefing (AI/construction/macro/HYROX)
+• Val     — Chief of Fitness: Strava + Hevy, training analysis, lactate zones, HYROX/half marathon progress
+• Sally   — Chief of Market Communications: newsletter performance, topic memory, research briefs
+• Mo      — Chief Warehouse Manager: stores and retrieves all files, provides context to other agents
+• Peter   — Chief of Finance: expense tracking, invoices, job costing, budget summaries
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ STRATEGIC PLAYBOOK ━━━
@@ -339,6 +340,59 @@ _TOOLS = [
             "required": ["filename"],
         },
     },
+    {
+        "name": "log_expense",
+        "description": "Peter logs an expense for the construction business.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "amount":      {"type": "number",  "description": "Amount spent."},
+                "category":    {"type": "string",  "description": "materials/labour/overhead/equipment/other"},
+                "description": {"type": "string",  "description": "What was spent on."},
+                "job":         {"type": "string",  "description": "Job or project name (optional)."},
+                "currency":    {"type": "string",  "description": "Currency code, default SGD."},
+            },
+            "required": ["amount", "category", "description"],
+        },
+    },
+    {
+        "name": "log_invoice",
+        "description": "Peter logs an invoice issued to a client.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "amount":      {"type": "number", "description": "Invoice amount."},
+                "client":      {"type": "string", "description": "Client name."},
+                "description": {"type": "string", "description": "Work description."},
+                "job":         {"type": "string", "description": "Job or project name (optional)."},
+                "status":      {"type": "string", "description": "pending/paid/overdue"},
+                "currency":    {"type": "string", "description": "Currency code, default SGD."},
+            },
+            "required": ["amount", "client", "description"],
+        },
+    },
+    {
+        "name": "get_finance_summary",
+        "description": "Peter summarises income vs expenses over the last N days.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "days": {"type": "integer", "description": "Lookback window in days (default 30)."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "get_job_summary",
+        "description": "Peter summarises all costs and invoices for a specific job.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "job": {"type": "string", "description": "Job or project name."},
+            },
+            "required": ["job"],
+        },
+    },
 ]
 
 _HANDLERS = {
@@ -360,6 +414,10 @@ _HANDLERS = {
     "mo_search":                 lambda inp: mo_search(inp["query"], inp.get("category", "")),
     "mo_list":                   lambda inp: mo_list(inp.get("category", "")),
     "mo_get_file":               lambda inp: mo_get(inp["filename"]),
+    "log_expense":               lambda inp: log_expense(inp["amount"], inp["category"], inp["description"], inp.get("job", ""), inp.get("currency", "SGD")),
+    "log_invoice":               lambda inp: log_invoice(inp["amount"], inp["client"], inp["description"], inp.get("job", ""), inp.get("status", "pending"), inp.get("currency", "SGD")),
+    "get_finance_summary":       lambda inp: get_finance_summary(inp.get("days", 30)),
+    "get_job_summary":           lambda inp: get_job_summary(inp["job"]),
 }
 
 
