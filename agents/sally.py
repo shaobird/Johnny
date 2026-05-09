@@ -1,39 +1,163 @@
 """
-Sally — Chief of Marketing & Communications. Editorial sub-agent.
+Sally — Chief of Marketing & Communications. The newsletter sub-agent.
 
-Sally is not a Telegram bot. She's an internal specialist that Johnny
-delegates writing/editing tasks to. She enforces the voice rules from
-memory.json (alter_ego.voice + content_themes) and uses the library agent
-to stay aware of past coverage and trending terms so she doesn't repeat.
+Sally owns the newsletter domain end-to-end:
+  - performance tracking (opens / clicks per issue)
+  - topic memory (what we've covered, when)
+  - research brief (intel + topic gaps + top performers)
+  - drafting (full publishable text in the brand voice)
+  - polishing (tighten, punchier, shorter, clarify, headline)
+  - shipping (archive to the library + log for performance tracking)
 
-Public API:
-    draft_newsletter(angle, brief=None, length="medium") -> dict
-        Returns {"title", "hook", "body", "key_points"}
-
-    polish(text, intent="tighten") -> str
-        Sharpens any draft text. intent ∈ {"tighten", "punchier", "shorter",
-        "clarify", "headline"}.
-
-    ship_newsletter(title, body, source="alter_ego", topic="", key_points="")
-        Archives the final newsletter into the library (per-week, indexed for
-        trends) AND logs it to the newsletter performance agent.
+She is not a Telegram bot. She's an internal specialist that Johnny
+delegates to. Voice + content themes come from memory.json (alter_ego.*)
+and she queries the library agent for term-trends so she doesn't repeat
+saturated topics.
 """
 
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import datetime, timedelta, date
 from typing import Any
 
 import anthropic
 
 import memory as mem
 from agents.library import for_persona
-from agents.newsletter import get_recent_topics, get_top_performers, log_newsletter
+from agents.intel import get_intel_briefing
 from config import ANTHROPIC_API_KEY
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 _MODEL = "claude-sonnet-4-6"
+
+
+# ── Performance tracking & topic memory ─────────────────────────────────────
+
+def log_newsletter(title: str, topic: str, key_points: str = "") -> str:
+    """Record a newsletter that was sent. Performance metrics added later."""
+    data = mem.load()
+    newsletters = data.setdefault("newsletters", [])
+    newsletters.append({
+        "ts": datetime.now().isoformat(),
+        "title": title,
+        "topic": topic,
+        "key_points": key_points,
+        "metrics": None,
+    })
+    data["newsletters"] = newsletters[-200:]
+    mem.save(data)
+    return f"Newsletter logged: \"{title}\" (topic: {topic})"
+
+
+def record_metrics(title: str, opens: int, clicks: int, sent_to: int = 0) -> str:
+    """Attach performance metrics to a previously logged newsletter."""
+    data = mem.load()
+    newsletters = data.get("newsletters", [])
+
+    target = None
+    for nl in reversed(newsletters):
+        if nl["title"].lower().strip() == title.lower().strip():
+            target = nl
+            break
+
+    if not target:
+        return f"No newsletter found with title \"{title}\". Log it first."
+
+    open_rate = round(opens / sent_to * 100, 1) if sent_to else None
+    click_rate = round(clicks / sent_to * 100, 1) if sent_to else None
+
+    target["metrics"] = {
+        "opens": opens,
+        "clicks": clicks,
+        "sent_to": sent_to,
+        "open_rate_pct": open_rate,
+        "click_rate_pct": click_rate,
+        "recorded_at": datetime.now().isoformat(),
+    }
+    mem.save(data)
+    return (
+        f"Metrics saved for \"{target['title']}\": "
+        f"{opens} opens ({open_rate}%), {clicks} clicks ({click_rate}%)"
+    )
+
+
+def get_recent_topics(weeks: int = 8) -> str:
+    """Return topics covered in the last N weeks so we don't repeat."""
+    data = mem.load()
+    newsletters = data.get("newsletters", [])
+    cutoff = (datetime.now() - timedelta(weeks=weeks)).isoformat()
+    recent = [nl for nl in newsletters if nl.get("ts", "") >= cutoff]
+
+    if not recent:
+        return f"No newsletters logged in the last {weeks} weeks."
+
+    lines = []
+    for nl in recent:
+        d = nl["ts"][:10]
+        metrics = nl.get("metrics") or {}
+        perf = ""
+        if metrics.get("open_rate_pct") is not None:
+            perf = f" · {metrics['open_rate_pct']}% open / {metrics['click_rate_pct']}% click"
+        lines.append(f"  [{d}] {nl['title']} — topic: {nl['topic']}{perf}")
+    return f"NEWSLETTERS LAST {weeks} WEEKS:\n" + "\n".join(lines)
+
+
+def get_top_performers(limit: int = 5) -> str:
+    """Return best-performing newsletters by open rate."""
+    data = mem.load()
+    newsletters = data.get("newsletters", [])
+    with_metrics = [
+        nl for nl in newsletters
+        if nl.get("metrics") and nl["metrics"].get("open_rate_pct") is not None
+    ]
+
+    if not with_metrics:
+        return "No newsletters have performance metrics recorded yet."
+
+    sorted_nls = sorted(
+        with_metrics,
+        key=lambda n: n["metrics"]["open_rate_pct"],
+        reverse=True,
+    )[:limit]
+
+    lines = []
+    for nl in sorted_nls:
+        m = nl["metrics"]
+        lines.append(
+            f"  • {nl['title']} — {m['open_rate_pct']}% open, {m['click_rate_pct']}% click "
+            f"(topic: {nl['topic']})"
+        )
+    return f"TOP {limit} NEWSLETTERS BY OPEN RATE:\n" + "\n".join(lines)
+
+
+# ── Research brief ──────────────────────────────────────────────────────────
+
+def prepare_research_brief(angle: str = "") -> str:
+    """
+    Generate a research brief for the next newsletter.
+    Combines intel briefing + recent topic gap analysis + top performers.
+    """
+    recent = get_recent_topics(weeks=6)
+    top = get_top_performers(limit=5)
+
+    print("[Sally] Pulling intel briefing — this may take 1-2 min...")
+    intel = get_intel_briefing()
+
+    angle_note = f"REQUESTED ANGLE: {angle}\n\n" if angle else ""
+
+    return f"""━━━ NEWSLETTER RESEARCH BRIEF ━━━
+{angle_note}{recent}
+
+{top}
+
+━━━ FRESH INTEL (from today's intel briefing) ━━━
+{intel}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use the intel above as raw input. Avoid repeating topics from the last 6 weeks.
+Reference what's worked (top performers) when picking angles.
+"""
 
 LENGTH_TARGETS = {
     "short":  "150-250 words",

@@ -19,14 +19,14 @@ from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.training_loop import get_training_analysis, log_proposal, record_outcome
 from agents.gmail import get_email_summary
-from agents.newsletter import (
+from agents import sally
+from agents.sally import (
     log_newsletter,
     record_metrics as record_newsletter_metrics,
     get_recent_topics,
     get_top_performers,
     prepare_research_brief,
 )
-from agents import sally
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
