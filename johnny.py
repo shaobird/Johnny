@@ -26,6 +26,7 @@ from agents.newsletter import (
     get_top_performers,
     prepare_research_brief,
 )
+from agents import kanaan
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -44,6 +45,11 @@ _TOOL_KEYWORDS = (
     "save note", "remember this", "log ", "record ",
     "newsletter", "brief",
     "analyse this", "analyze this",
+    # Kanaan / CTO agent
+    "kanaan", "audit the code", "audit codebase", "audit johnny",
+    "build a sub-agent", "build a sub agent", "build a new agent",
+    "scaffold an agent", "review the code", "code review",
+    "ecosystem health", "codebase",
 )
 
 
@@ -85,6 +91,10 @@ You address the user as "Boss" unless their name is in the profile below.
 • Calendar Agent   — Google Calendar: today's meetings and events
 • Fitness Agent    — Strava + Hevy: last 7 days of activity, progress, advice
 • News Agent       — Forex Factory: today's HIGH-IMPACT economic releases
+• Kanaan (CTO)     — Audits the codebase, scaffolds new sub-agents, reviews changes
+                     via PRs. Delegate to him for any code-health, architecture, or
+                     "build me a new agent" request. He runs multi-minute and opens
+                     PRs you'll need to merge.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ STRATEGIC PLAYBOOK ━━━
@@ -273,6 +283,54 @@ _TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
+        "name": "kanaan_audit",
+        "description": (
+            "Delegate to Kanaan (CTO) for a full ecosystem audit: agent inventory, "
+            "integration gaps, code health, dependency status, lint status, "
+            "and prioritised recommendations. Takes a few minutes. Does NOT open a PR."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "kanaan_build",
+        "description": (
+            "Delegate to Kanaan to scaffold a new sub-agent. Kanaan creates a "
+            "kanaan/<slug> branch, writes the agent file, runs lint + syntax checks, "
+            "and opens a GitHub PR for human review. Never merges — Boss merges. "
+            "Use when the user says things like 'build me a weather agent' or "
+            "'scaffold an X agent'. Takes a few minutes."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "spec": {
+                    "type": "string",
+                    "description": (
+                        "Specification for the new agent. Be specific: what it does, "
+                        "what data sources / APIs it uses, what public function name it "
+                        "should expose, and any environment variables it needs."
+                    ),
+                },
+            },
+            "required": ["spec"],
+        },
+    },
+    {
+        "name": "kanaan_ask",
+        "description": (
+            "Ask Kanaan a freeform question about the codebase. Use for code questions "
+            "like 'where is X defined', 'why does Y do Z', 'is there dead code in "
+            "agents/foo.py'. Kanaan can read any file and run lint/tests to answer."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {"type": "string", "description": "The question to ask Kanaan."},
+            },
+            "required": ["question"],
+        },
+    },
+    {
         "name": "prepare_newsletter_brief",
         "description": (
             "Generate a full research brief for the next newsletter. "
@@ -304,6 +362,9 @@ _HANDLERS = {
     "get_recent_newsletter_topics": lambda inp: get_recent_topics(inp.get("weeks", 8)),
     "get_top_newsletters":       lambda _:   get_top_performers(),
     "prepare_newsletter_brief":  lambda inp: prepare_research_brief(inp.get("angle", "")),
+    "kanaan_audit":              lambda _:   kanaan.audit(),
+    "kanaan_build":              lambda inp: kanaan.build(inp["spec"]),
+    "kanaan_ask":                lambda inp: kanaan.ask(inp["question"]),
 }
 
 
