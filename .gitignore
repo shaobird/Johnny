@@ -24,6 +24,13 @@ seen_emails.json
 token.pickle
 credentials.json
 
+# Peter's runtime data — never commit (see *.template.json for structure)
+agents/peter/data/watchlist.json
+agents/peter/data/couple.json
+
+# Cloned upstream financial-services repo (reference only, do not commit)
+peter/reference/
+
 # Python
 __pycache__/
 *.py[cod]

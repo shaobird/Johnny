@@ -1,0 +1,66 @@
+{
+  "_doc": "Couple's joint financial profile. Copy to couple.json and populate. All amounts SGD unless noted.",
+  "as_of": "YYYY-MM-DD",
+  "household": {
+    "boss": {
+      "name": "Zhang Zhi Yi",
+      "age": 0,
+      "income_monthly": 0,
+      "income_source": "construction biz drawings + forex",
+      "cpf_oa": 0,
+      "cpf_sa": 0,
+      "cpf_ma": 0,
+      "srs": 0
+    },
+    "yvonne": {
+      "name": "Yvonne",
+      "age": 0,
+      "income_monthly": 0,
+      "income_source": "",
+      "cpf_oa": 0,
+      "cpf_sa": 0,
+      "cpf_ma": 0,
+      "srs": 0
+    },
+    "joint": {
+      "fixed_costs_monthly": 0,
+      "discretionary_monthly": 0,
+      "target_savings_rate_pct": 35,
+      "emergency_fund_months_target": 6,
+      "current_emergency_fund": 0
+    }
+  },
+  "goals": [
+    {
+      "name": "BTO downpayment",
+      "target_amount_sgd": 0,
+      "target_date": "YYYY-MM-DD",
+      "current_progress_sgd": 0,
+      "priority": "high",
+      "notes": ""
+    },
+    {
+      "name": "Retirement at 55",
+      "target_amount_sgd": 0,
+      "target_date": "YYYY-MM-DD",
+      "current_progress_sgd": 0,
+      "priority": "high",
+      "notes": "Combined CPF + investments"
+    },
+    {
+      "name": "First child fund",
+      "target_amount_sgd": 0,
+      "target_date": "YYYY-MM-DD",
+      "current_progress_sgd": 0,
+      "priority": "medium",
+      "notes": ""
+    }
+  ],
+  "risk_tolerance": "moderate-aggressive",
+  "max_drawdown_tolerance_pct": 30,
+  "constraints": [
+    "No leverage on personal portfolio",
+    "Construction biz cashflow stays separate",
+    "Maintain 6-month emergency fund before adding to growth allocation"
+  ]
+}

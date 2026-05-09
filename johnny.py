@@ -26,6 +26,7 @@ from agents.newsletter import (
     get_top_performers,
     prepare_research_brief,
 )
+from agents.peter import consult_peter
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -44,6 +45,12 @@ _TOOL_KEYWORDS = (
     "save note", "remember this", "log ", "record ",
     "newsletter", "brief",
     "analyse this", "analyze this",
+    # Peter (financial sub-agent) routing
+    "portfolio", "holdings", "stock", "ticker", "rebalance", "rebalancing",
+    "savings", "retirement", "bto", "mortgage", "cpf", "srs", "yvonne",
+    "carry", "rates", "central bank", "fed", "ecb", "boj",
+    "project p&l", "cashflow", "vendor", "contract", "invoice", "receivable",
+    "peter", "ask peter", "finance",
 )
 
 
@@ -85,6 +92,12 @@ You address the user as "Boss" unless their name is in the profile below.
 • Calendar Agent   — Google Calendar: today's meetings and events
 • Fitness Agent    — Strava + Hevy: last 7 days of activity, progress, advice
 • News Agent       — Forex Factory: today's HIGH-IMPACT economic releases
+• Peter (Finance)  — family CFO sub-agent for the couple (Boss + Yvonne).
+                     Call consult_peter for ANYTHING involving the personal
+                     portfolio, joint financial planning, FX desk preparation,
+                     or construction-business finance. Don't try to answer
+                     finance questions yourself — delegate to Peter and relay
+                     his framing in your own voice.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ STRATEGIC PLAYBOOK ━━━
@@ -273,6 +286,39 @@ _TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     {
+        "name": "consult_peter",
+        "description": (
+            "Delegate a financial-services question to Peter, the family-CFO sub-agent. "
+            "Peter handles personal portfolio review, couple's financial planning "
+            "(joint goals, savings, retirement, BTO, scenarios), FX desk prep "
+            "(macro, central banks, carry, post-trade journal), and construction biz "
+            "finance (project P&L, cashflow, contracts, SG corporate tax framing). "
+            "Peter has access to the household watchlist + couple profile and live web "
+            "search. Call him for ANY finance question — never answer finance yourself."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": (
+                        "The user's question, with any context you've gathered. "
+                        "Include specifics (ticker, amount, timeframe, the couple's situation)."
+                    ),
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": ["portfolio", "couple", "fx", "biz", "auto"],
+                    "description": (
+                        "Which Peter skill to engage. 'auto' lets Peter pick. "
+                        "Use a specific mode when the question is clearly one domain."
+                    ),
+                },
+            },
+            "required": ["question"],
+        },
+    },
+    {
         "name": "prepare_newsletter_brief",
         "description": (
             "Generate a full research brief for the next newsletter. "
@@ -304,6 +350,7 @@ _HANDLERS = {
     "get_recent_newsletter_topics": lambda inp: get_recent_topics(inp.get("weeks", 8)),
     "get_top_newsletters":       lambda _:   get_top_performers(),
     "prepare_newsletter_brief":  lambda inp: prepare_research_brief(inp.get("angle", "")),
+    "consult_peter":             lambda inp: consult_peter(inp["question"], inp.get("mode", "auto")),
 }
 
 

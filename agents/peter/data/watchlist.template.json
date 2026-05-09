@@ -1,0 +1,35 @@
+{
+  "_doc": "Personal portfolio holdings. Copy this file to watchlist.json and populate. Currency in 'cost_basis' is per-share in 'currency' field. Owner: 'boss', 'yvonne', or 'joint'.",
+  "as_of": "YYYY-MM-DD",
+  "base_currency": "SGD",
+  "target_allocation": {
+    "ai_thesis": 0.40,
+    "broad_equity": 0.30,
+    "income": 0.15,
+    "cash_hedge": 0.15
+  },
+  "holdings": [
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "owner": "boss",
+      "account": "IBKR",
+      "qty": 0,
+      "cost_basis": 0.00,
+      "currency": "USD",
+      "thesis_bucket": "ai_thesis",
+      "notes": ""
+    },
+    {
+      "ticker": "VWRA.L",
+      "name": "Vanguard FTSE All-World UCITS",
+      "owner": "joint",
+      "account": "IBKR",
+      "qty": 0,
+      "cost_basis": 0.00,
+      "currency": "USD",
+      "thesis_bucket": "broad_equity",
+      "notes": ""
+    }
+  ]
+}
