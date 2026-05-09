@@ -1,0 +1,12 @@
+line-length = 120
+target-version = "py311"
+
+[lint]
+# Conservative starting set: pyflakes real-bug rules + syntax errors only.
+# Existing code has cosmetic issues (import sorting, redundant open modes,
+# empty f-strings) we can clean up later, then expand this to ["E","F","I","B","UP"].
+select = ["F", "E9"]
+ignore = [
+  "F401",  # unused-import — existing code has a few; revisit later
+  "F541",  # f-string without placeholders — cosmetic
+]
