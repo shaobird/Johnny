@@ -10,6 +10,7 @@ Commands:
   /intel    — daily intelligence briefing (AI, construction, forex, HYROX)
   /journal  — save a journal entry (e.g. /journal Today was tough but productive)
   /reflect  — Johnny reflects on your last 7 days of journal entries
+  /kanaan   — talk to Kanaan (CTO agent): audit, build a sub-agent, or freeform
 
 Any other text is forwarded to Johnny as a freeform message.
 """
@@ -36,6 +37,7 @@ from agents.intel import get_intel_briefing
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from agents.files import parse_file
+from agents import kanaan as kanaan_agent
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
@@ -156,6 +158,47 @@ async def cmd_reflect(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "• One clear recommendation for the week ahead.\n"
         "Be direct. No filler."
     )
+    await _send_long(update, reply)
+
+
+# ── Kanaan (CTO agent) handler ────────────────────────────────────────────────
+
+async def cmd_kanaan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Talk to Kanaan, the CTO agent. Subcommands:
+      /kanaan audit            — full ecosystem audit (no PR)
+      /kanaan build <spec>     — scaffold a new sub-agent and open a PR
+      /kanaan <freeform>       — ask anything about the codebase
+    """
+    args = context.args or []
+    if not args:
+        await update.message.reply_text(
+            "Kanaan — Johnny's CTO. Usage:\n"
+            "  /kanaan audit\n"
+            "  /kanaan build <spec, e.g. weather agent using OpenWeather>\n"
+            "  /kanaan <freeform question about the codebase>"
+        )
+        return
+
+    sub = args[0].lower()
+    if sub == "audit":
+        await update.message.reply_text("🛠️ Kanaan auditing the ecosystem… this can take a few minutes ⏳")
+        reply = await asyncio.to_thread(kanaan_agent.audit)
+    elif sub == "build":
+        spec = " ".join(args[1:]).strip()
+        if not spec:
+            await update.message.reply_text("Usage: /kanaan build <spec>")
+            return
+        await update.message.reply_text(
+            f"🛠️ Kanaan building: {spec}\n"
+            "He'll open a PR when done. Takes a few minutes ⏳"
+        )
+        reply = await asyncio.to_thread(kanaan_agent.build, spec)
+    else:
+        question = " ".join(args).strip()
+        await update.message.reply_text("🛠️ Kanaan thinking…")
+        reply = await asyncio.to_thread(kanaan_agent.ask, question)
+
     await _send_long(update, reply)
 
 
@@ -360,6 +403,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(CommandHandler("newsletter", cmd_newsletter))
+    app.add_handler(CommandHandler("kanaan", cmd_kanaan))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
@@ -379,4 +423,5 @@ async def _set_commands(app: Application) -> None:
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
         ("newsletter", "Newsletter research brief"),
+        ("kanaan",   "CTO agent — audit / build sub-agents"),
     ])
