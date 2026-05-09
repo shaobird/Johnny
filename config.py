@@ -28,6 +28,10 @@ BRIEFING_TIME = os.getenv("BRIEFING_TIME", "07:00")
 # Recommend sending 30–60 min after the morning briefing
 INTEL_BRIEFING_TIME = os.getenv("INTEL_BRIEFING_TIME", "07:30")
 
+# Macro brief — FX + central-bank + week-ahead data (research agent)
+# Defaults to right after intel; tune to match your trading session prep window
+MACRO_BRIEF_TIME = os.getenv("MACRO_BRIEF_TIME", "07:45")
+
 # MrktEdge — High Impact news monitor
 MRKTEDGE_EMAIL = os.getenv("MRKTEDGE_EMAIL")
 MRKTEDGE_PASSWORD = os.getenv("MRKTEDGE_PASSWORD")

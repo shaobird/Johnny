@@ -4,16 +4,17 @@ Scheduler — fires Johnny's daily jobs.
 Jobs:
   1. Morning briefing  (BRIEFING_TIME)       — calendar + fitness + forex events
   2. Intel briefing    (INTEL_BRIEFING_TIME) — AI + construction + macro + HYROX news
-  3. MrktEdge monitor  (every 10 min)        — HIGH IMPACT news alerts, instant push
-  4. Memory maintenance (02:00 nightly)      — dedupe + sort notes, no API cost
-  5. Weekly retro       (Sunday 08:00)       — one-week pattern summary via Claude
-  6. Gmail monitor      (every 30 min)       — new relevant emails, instant push
+  3. Macro brief       (MACRO_BRIEF_TIME)    — FX + central-bank + week-ahead data
+  4. MrktEdge monitor  (every 10 min)        — HIGH IMPACT news alerts, instant push
+  5. Memory maintenance (02:00 nightly)      — dedupe + sort notes, no API cost
+  6. Weekly retro       (Sunday 08:00)       — one-week pattern summary via Claude
+  7. Gmail monitor      (every 30 min)       — new relevant emails, instant push
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import Application
 
-from config import BRIEFING_TIME, INTEL_BRIEFING_TIME
+from config import BRIEFING_TIME, INTEL_BRIEFING_TIME, MACRO_BRIEF_TIME
 
 
 def setup(app: Application) -> AsyncIOScheduler:
@@ -24,6 +25,7 @@ def setup(app: Application) -> AsyncIOScheduler:
     from telegram_bot import (
         push_briefing,
         push_intel,
+        push_macro,
         push_mrktedge_alerts,
         push_maintenance_report,
         push_weekly_retro,
@@ -54,6 +56,19 @@ def setup(app: Application) -> AsyncIOScheduler:
         minute=int(i_min),
         args=[app],
         id="daily_intel",
+        replace_existing=True,
+        misfire_grace_time=300,
+    )
+
+    # ── Job 2b: Macro brief (FX + central banks + week-ahead data) ────────────
+    m_hour, m_min = MACRO_BRIEF_TIME.split(":")
+    scheduler.add_job(
+        push_macro,
+        trigger="cron",
+        hour=int(m_hour),
+        minute=int(m_min),
+        args=[app],
+        id="daily_macro",
         replace_existing=True,
         misfire_grace_time=300,
     )

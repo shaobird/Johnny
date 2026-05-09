@@ -8,6 +8,10 @@ Commands:
   /fitness  — fitness summary only
   /news     — Forex Factory high-impact events only
   /intel    — daily intelligence briefing (AI, construction, forex, HYROX)
+  /research — deep-dive on a sector / theme / ticker (e.g. /research NVDA)
+  /macro    — FX + central-bank + scheduled-data brief
+  /earnings — earnings review for a ticker (e.g. /earnings MSFT)
+  /thesis   — weekly AI / automation thesis tracker (or pass your own thesis)
   /journal  — save a journal entry (e.g. /journal Today was tough but productive)
   /reflect  — Johnny reflects on your last 7 days of journal entries
 
@@ -33,6 +37,7 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
+from agents.research import research_topic, macro_brief, earnings_brief, thesis_update
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from agents.files import parse_file
@@ -56,6 +61,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "  /fitness  — workout summary\n"
         "  /news     — Forex high-impact events\n"
         "  /intel    — AI, construction & macro briefing\n"
+        "  /research — sector/ticker deep dive (e.g. /research NVDA)\n"
+        "  /macro    — FX + central-bank + data brief\n"
+        "  /earnings — earnings review (e.g. /earnings MSFT)\n"
+        "  /thesis   — AI thesis tracker (or pass your own)\n"
         "  /journal  — log a journal entry\n"
         "              e.g. /journal Good Push session today\n"
         "  /reflect  — Johnny reflects on your last 7 days\n\n"
@@ -90,6 +99,58 @@ async def cmd_intel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("🔴 Scraping Forex Factory…")
     await _send_long(update, get_high_impact_news())
+
+
+# ── Research handlers ─────────────────────────────────────────────────────────
+
+async def cmd_research(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    topic = " ".join(context.args) if context.args else ""
+    if not topic:
+        await update.message.reply_text(
+            "Usage: /research <topic>\n"
+            "Examples:\n"
+            "  /research datacenter power demand\n"
+            "  /research NVDA\n"
+            "  /research Singapore construction tech"
+        )
+        return
+    await update.message.reply_text(
+        f"🔍 Researching *{topic}* — comps, catalysts, risks, ideas…\n"
+        "Takes 1–2 min ⏳",
+        parse_mode="Markdown",
+    )
+    reply = await asyncio.to_thread(research_topic, topic)
+    await _send_long(update, reply)
+
+
+async def cmd_macro(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("💱 Building macro brief — USD bias, central banks, week-ahead data…")
+    reply = await asyncio.to_thread(macro_brief)
+    await _send_long(update, reply)
+
+
+async def cmd_earnings(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    ticker = (context.args[0] if context.args else "").strip().upper()
+    if not ticker:
+        await update.message.reply_text("Usage: /earnings <TICKER>\nExample: /earnings NVDA")
+        return
+    await update.message.reply_text(
+        f"📊 Reviewing *{ticker}* — last print, guide, call takeaways…",
+        parse_mode="Markdown",
+    )
+    reply = await asyncio.to_thread(earnings_brief, ticker)
+    await _send_long(update, reply)
+
+
+async def cmd_thesis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    thesis = " ".join(context.args) if context.args else ""
+    label = thesis or "AI + automation"
+    await update.message.reply_text(
+        f"🧠 Tracking thesis: *{label}* — last 7 days…",
+        parse_mode="Markdown",
+    )
+    reply = await asyncio.to_thread(thesis_update, thesis)
+    await _send_long(update, reply)
 
 
 # ── Free-text handler ─────────────────────────────────────────────────────────
@@ -273,6 +334,18 @@ async def push_intel(app: Application) -> None:
     await _push(app, text)
 
 
+async def push_macro(app: Application) -> None:
+    """Called by the scheduler to send the morning macro / FX brief."""
+    if not TELEGRAM_CHAT_ID:
+        print("TELEGRAM_CHAT_ID not set — skipping macro brief.")
+        return
+    try:
+        text = await asyncio.to_thread(macro_brief)
+        await _push(app, f"💱 *Macro Brief*\n\n{text}")
+    except Exception as exc:
+        print(f"[Macro] Push failed: {exc}")
+
+
 async def push_email_alerts(app: Application) -> None:
     """Called every 30 min — pushes new relevant emails instantly."""
     if not TELEGRAM_CHAT_ID:
@@ -357,6 +430,10 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("fitness", cmd_fitness))
     app.add_handler(CommandHandler("news", cmd_news))
     app.add_handler(CommandHandler("intel", cmd_intel))
+    app.add_handler(CommandHandler("research", cmd_research))
+    app.add_handler(CommandHandler("macro", cmd_macro))
+    app.add_handler(CommandHandler("earnings", cmd_earnings))
+    app.add_handler(CommandHandler("thesis", cmd_thesis))
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(CommandHandler("newsletter", cmd_newsletter))
@@ -376,6 +453,10 @@ async def _set_commands(app: Application) -> None:
         ("fitness",  "Workout summary"),
         ("news",     "Forex high-impact events"),
         ("intel",    "AI, construction & macro briefing"),
+        ("research", "Sector / ticker deep dive"),
+        ("macro",    "FX + central-bank brief"),
+        ("earnings", "Earnings review for a ticker"),
+        ("thesis",   "AI thesis tracker"),
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
         ("newsletter", "Newsletter research brief"),
