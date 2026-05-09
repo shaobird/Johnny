@@ -1,78 +1,62 @@
 """
-Quick CLI for archiving a newsletter from the terminal.
+Quick CLI for the Library agent. Works for any persona.
 
 Usage:
-    python library_cli.py archive --source Stratechery --date 2026-05-08 path/to/issue.html
-    python library_cli.py trends --weeks 12
-    python library_cli.py term ai-agents
+    python library_cli.py --persona johnny archive path/to/issue.html \\
+        --source Stratechery --date 2026-05-08
+    python library_cli.py --persona sally trends --weeks 12
+    python library_cli.py term agents
 """
 
 from __future__ import annotations
 
 import argparse
-import sys
-from datetime import date
-from pathlib import Path
 
-import library as lib
+from agents.library import for_persona
 
 
-def cmd_archive(args: argparse.Namespace) -> None:
-    src_path = Path(args.path)
-    if not src_path.is_file():
-        sys.exit(f"file not found: {src_path}")
-    issue_date = date.fromisoformat(args.date)
-    iso_year, iso_week, _ = issue_date.isocalendar()
-    week_dir = lib.NEWSLETTERS_DIR / f"{iso_year}" / f"W{iso_week:02d}"
-    week_dir.mkdir(parents=True, exist_ok=True)
-
-    src_slug = lib.slugify(args.source).lower()
-    target = week_dir / f"{issue_date.isoformat()}_{src_slug}{src_path.suffix or '.txt'}"
-    data = src_path.read_bytes()
-    target.write_bytes(data)
-
-    rel_path = target.relative_to(lib.NEWSLETTERS_DIR).as_posix()
-    text = lib.extract_text(target)
-    word_count = len(text.split()) if text else 0
-
-    with lib.db() as conn:
-        cur = conn.execute(
-            """INSERT INTO files(kind, rel_path, original_name, size, mime, sha256, uploaded_at, tags, notes)
-               VALUES('newsletter', ?, ?, ?, ?, ?, datetime('now'), ?, ?)""",
-            (rel_path, src_path.name, len(data), None, lib.hash_bytes(data),
-             args.tags or "", args.summary or ""),
-        )
-        file_id = cur.lastrowid
-        conn.execute(
-            """INSERT INTO newsletters(file_id, source, issue_date, year, week, title, summary, word_count)
-               VALUES(?, ?, ?, ?, ?, ?, ?, ?)""",
-            (file_id, args.source, issue_date.isoformat(), iso_year, iso_week,
-             args.title, args.summary, word_count),
-        )
-
-    if text:
-        lib.index_terms(file_id, text)
-    print(f"archived {target}  ({iso_year}-W{iso_week:02d}, {word_count} words)")
+def cmd_archive(lib, args: argparse.Namespace) -> None:
+    result = lib.archive_newsletter(
+        args.path,
+        source=args.source,
+        issue_date=args.date,
+        title=args.title,
+        summary=args.summary,
+        tags=args.tags or "",
+    )
+    print(f"archived  {result.rel_path}  ({result.year}-W{result.week:02d}, {result.word_count} words)")
 
 
-def cmd_trends(args: argparse.Namespace) -> None:
-    out = lib.trends(source=args.source, weeks=args.weeks, top=args.top)
-    print(f"top terms across last {out['weeks']} issues" + (f" of {out['source']}" if out['source'] else ""))
+def cmd_add(lib, args: argparse.Namespace) -> None:
+    result = lib.add_file(args.path, folder=args.folder or "", tags=args.tags or "", notes=args.notes or "")
+    print(f"added  {result['rel_path']}  ({result['size']} bytes)")
+
+
+def cmd_trends(lib, args: argparse.Namespace) -> None:
+    out = lib.trends(weeks=args.weeks, source=args.source, top=args.top)
+    label = f" of {out['source']}" if out["source"] else ""
+    print(f"top terms across last {out['weeks']} issues{label}")
     for t in out["terms"]:
         print(f"  {t['term']:<24} total={t['total']:<5} issues={t['issues']}")
 
 
-def cmd_term(args: argparse.Namespace) -> None:
-    out = lib.term_history(args.term, source=args.source)
-    if not out["history"]:
+def cmd_term(lib, args: argparse.Namespace) -> None:
+    history = lib.term_history(args.term, source=args.source)
+    if not history:
         print("no occurrences")
         return
-    for h in out["history"]:
+    for h in history:
         print(f"  {h['issue_date']}  {h['source']:<20}  {h['count']}")
+
+
+def cmd_list(lib, args: argparse.Namespace) -> None:
+    for n in lib.list_newsletters(source=args.source, limit=args.limit):
+        print(f"  {n['issue_date']}  {n['source']:<20}  {n['title'] or ''}")
 
 
 def main() -> None:
     p = argparse.ArgumentParser()
+    p.add_argument("--persona", default="johnny")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     a = sub.add_parser("archive")
@@ -83,6 +67,13 @@ def main() -> None:
     a.add_argument("--summary", default=None)
     a.add_argument("--tags", default=None)
     a.set_defaults(func=cmd_archive)
+
+    f = sub.add_parser("add")
+    f.add_argument("path")
+    f.add_argument("--folder", default=None)
+    f.add_argument("--tags", default=None)
+    f.add_argument("--notes", default=None)
+    f.set_defaults(func=cmd_add)
 
     t = sub.add_parser("trends")
     t.add_argument("--source", default=None)
@@ -95,8 +86,14 @@ def main() -> None:
     th.add_argument("--source", default=None)
     th.set_defaults(func=cmd_term)
 
+    ls = sub.add_parser("list")
+    ls.add_argument("--source", default=None)
+    ls.add_argument("--limit", type=int, default=50)
+    ls.set_defaults(func=cmd_list)
+
     args = p.parse_args()
-    args.func(args)
+    lib = for_persona(args.persona)
+    args.func(lib, args)
 
 
 if __name__ == "__main__":
