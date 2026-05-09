@@ -1,6 +1,7 @@
 """
-Newsletter Agent — performance tracking, calendar memory, source aggregation.
+Sally — Chief of Market Communications
 
+Sally manages all outbound content and newsletter operations.
 Three jobs:
   1. Track which newsletters performed best (open rate, click rate)
   2. Remember recent topics so Johnny doesn't suggest repeats
@@ -124,12 +125,12 @@ def prepare_research_brief(angle: str = "") -> str:
     recent = get_recent_topics(weeks=6)
     top = get_top_performers(limit=5)
 
-    print("[Newsletter] Pulling intel briefing — this may take 1-2 min...")
+    print("[Sally] Pulling intel briefing — this may take 1-2 min...")
     intel = get_intel_briefing()
 
     angle_note = f"REQUESTED ANGLE: {angle}\n\n" if angle else ""
 
-    return f"""━━━ NEWSLETTER RESEARCH BRIEF ━━━
+    return f"""━━━ SALLY'S NEWSLETTER BRIEF ━━━
 {angle_note}{recent}
 
 {top}
