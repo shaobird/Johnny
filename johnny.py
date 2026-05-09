@@ -26,6 +26,7 @@ from agents.newsletter import (
     get_top_performers,
     prepare_research_brief,
 )
+from agents.mo import search as mo_search, get_context as mo_context, list_files as mo_list, get_file_content as mo_get
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -287,6 +288,55 @@ _TOOLS = [
             "required": [],
         },
     },
+    {
+        "name": "ask_mo",
+        "description": (
+            "Ask Mo (chief warehouse manager) for context on a topic. "
+            "Mo searches his stored files and returns relevant summaries. "
+            "Use before answering questions about construction docs, past quotes, newsletters, supplier info."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "topic": {"type": "string", "description": "Topic or question to find context for."},
+            },
+            "required": ["topic"],
+        },
+    },
+    {
+        "name": "mo_search",
+        "description": "Search Mo's warehouse by keyword. Optionally filter by category (construction/finance/newsletters/research/personal).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query":    {"type": "string", "description": "Search keyword."},
+                "category": {"type": "string", "description": "Optional category filter."},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "mo_list",
+        "description": "List all files Mo has stored. Optionally filter by category.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "Optional category filter."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "mo_get_file",
+        "description": "Get the full parsed content of a file stored by Mo.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "filename": {"type": "string", "description": "Exact filename to retrieve."},
+            },
+            "required": ["filename"],
+        },
+    },
 ]
 
 _HANDLERS = {
@@ -304,6 +354,10 @@ _HANDLERS = {
     "get_recent_newsletter_topics": lambda inp: get_recent_topics(inp.get("weeks", 8)),
     "get_top_newsletters":       lambda _:   get_top_performers(),
     "prepare_newsletter_brief":  lambda inp: prepare_research_brief(inp.get("angle", "")),
+    "ask_mo":                    lambda inp: mo_context(inp["topic"]),
+    "mo_search":                 lambda inp: mo_search(inp["query"], inp.get("category", "")),
+    "mo_list":                   lambda inp: mo_list(inp.get("category", "")),
+    "mo_get_file":               lambda inp: mo_get(inp["filename"]),
 }
 
 

@@ -36,6 +36,7 @@ from agents.intel import get_intel_briefing
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from agents.files import parse_file
+from agents.mo import store_file as mo_store
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
@@ -198,37 +199,62 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 # ── Document handler ──────────────────────────────────────────────────────────
 
+def _detect_category(filename: str, caption: str) -> str:
+    """Guess the best Mo category from filename and caption."""
+    text = (filename + " " + caption).lower()
+    if any(k in text for k in ["contract", "quote", "site", "build", "construct", "permit", "supplier"]):
+        return "construction"
+    if any(k in text for k in ["invoice", "budget", "cost", "finance", "payment", "expense"]):
+        return "finance"
+    if any(k in text for k in ["newsletter", "email blast", "campaign"]):
+        return "newsletters"
+    if any(k in text for k in ["research", "market", "report", "analysis"]):
+        return "research"
+    return "other"
+
+
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Receive a file (Excel/CSV/PDF/text), parse it, send to Johnny for analysis."""
+    """
+    Receive a file, store it in Mo's warehouse, then have Johnny analyse it.
+    Files are kept permanently so Mo can retrieve them later.
+    """
     doc = update.message.document
     if not doc:
         return
 
     caption = (update.message.caption or "").strip()
     filename = doc.file_name or "uploaded_file"
+    category = _detect_category(filename, caption)
 
-    await update.message.reply_text(f"📎 Got `{filename}`. Reading…", parse_mode="Markdown")
+    await update.message.reply_text(
+        f"📎 Got `{filename}`. Handing to Mo ({category})…",
+        parse_mode="Markdown"
+    )
 
     try:
-        # Download to temp file
+        # Download to temp
         tg_file = await doc.get_file()
         suffix = os.path.splitext(filename)[1] or ".bin"
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp_path = tmp.name
         await tg_file.download_to_drive(tmp_path)
 
-        # Parse it
-        parsed = await asyncio.to_thread(parse_file, tmp_path)
-        os.unlink(tmp_path)
-
-        # Build the message for Johnny
-        instruction = caption or (
-            "Analyse this file. Give me the key insights, anomalies, and what I should "
-            "act on. Use tables where useful. Be concise."
+        # Mo stores permanently + auto-summarises
+        mo_result = await asyncio.to_thread(
+            mo_store, tmp_path, filename, category, caption
         )
+        os.unlink(tmp_path)
+        await update.message.reply_text(f"🗄️ {mo_result}")
 
+        # Johnny analyses using Mo's parsed content
+        instruction = caption or (
+            "Analyse this file. Give me key insights, anomalies, and what I should act on. "
+            "Use tables where useful. Be concise."
+        )
+        parsed = await asyncio.to_thread(parse_file, f"storage/{category}/{filename}")
         prompt = (
-            f"The user uploaded a file named `{filename}`. Their request: {instruction}\n\n"
+            f"Mo just stored \"{filename}\" (category: {category}). "
+            f"The user's request: {instruction}\n\n"
             f"━━━ FILE CONTENTS ━━━\n{parsed}\n━━━━━━━━━━━━━━━━━━━━"
         )
 
