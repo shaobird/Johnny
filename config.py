@@ -8,7 +8,8 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # Telegram
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # Your personal chat ID
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # Boss's chat ID
+TELEGRAM_CHAT_ID_YVONNE = os.getenv("TELEGRAM_CHAT_ID_YVONNE")  # Yvonne's chat ID (Peter access)
 
 # Google Calendar
 GOOGLE_CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE", "credentials.json")

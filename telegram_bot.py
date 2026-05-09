@@ -12,6 +12,7 @@ Commands:
   /macro    — FX + central-bank + scheduled-data brief
   /earnings — earnings review for a ticker (e.g. /earnings MSFT)
   /thesis   — weekly AI / automation thesis tracker (or pass your own thesis)
+  /peter    — consult Peter, the family CFO (Boss + Yvonne both authorized)
   /journal  — save a journal entry (e.g. /journal Today was tough but productive)
   /reflect  — Johnny reflects on your last 7 days of journal entries
 
@@ -38,10 +39,23 @@ from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.research import research_topic, macro_brief, earnings_brief, thesis_update
+from agents.peter import consult_peter
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from agents.files import parse_file
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, OPENAI_API_KEY
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_CHAT_ID_YVONNE, OPENAI_API_KEY
+
+
+def _asker_for(chat_id: int | str | None) -> str | None:
+    """Map a Telegram chat_id to 'boss' / 'yvonne' / None (unauthorized)."""
+    if chat_id is None:
+        return None
+    cid = str(chat_id)
+    if TELEGRAM_CHAT_ID and cid == str(TELEGRAM_CHAT_ID):
+        return "boss"
+    if TELEGRAM_CHAT_ID_YVONNE and cid == str(TELEGRAM_CHAT_ID_YVONNE):
+        return "yvonne"
+    return None
 
 # In-memory conversation history per user (last 20 messages = 10 turns)
 _history: dict[int, list[dict]] = {}
@@ -65,6 +79,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "  /macro    — FX + central-bank + data brief\n"
         "  /earnings — earnings review (e.g. /earnings MSFT)\n"
         "  /thesis   — AI thesis tracker (or pass your own)\n"
+        "  /peter    — ask Peter (family CFO) — portfolio / couple / fx / biz\n"
         "  /journal  — log a journal entry\n"
         "              e.g. /journal Good Push session today\n"
         "  /reflect  — Johnny reflects on your last 7 days\n\n"
@@ -139,6 +154,45 @@ async def cmd_earnings(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         parse_mode="Markdown",
     )
     reply = await asyncio.to_thread(earnings_brief, ticker)
+    await _send_long(update, reply)
+
+
+async def cmd_peter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Direct line to Peter (family CFO). Usage: /peter [mode] <question>.
+
+    Mode is optional and one of: portfolio | couple | fx | biz | auto (default).
+    Example: /peter portfolio how is our AI exposure looking?
+    Example: /peter how much do we need monthly to hit BTO downpayment by 2027?
+    """
+    asker = _asker_for(update.effective_chat.id)
+    if asker is None:
+        await update.message.reply_text("Peter is private — your chat isn't authorized.")
+        return
+
+    args = list(context.args or [])
+    mode = "auto"
+    if args and args[0].lower() in ("portfolio", "couple", "fx", "biz", "auto"):
+        mode = args.pop(0).lower()
+    question = " ".join(args).strip()
+
+    if not question:
+        await update.message.reply_text(
+            "Usage: /peter [mode] <question>\n"
+            "Modes: portfolio | couple | fx | biz | auto (default)\n\n"
+            "Examples:\n"
+            "  /peter how is our AI exposure looking?\n"
+            "  /peter couple what's our progress on the BTO downpayment?\n"
+            "  /peter fx what's the setup for tonight's NY session?"
+        )
+        return
+
+    label = asker.title()
+    await update.message.reply_text(
+        f"📒 Peter is on it for *{label}* — mode: _{mode}_\n"
+        "Takes ~30–60s ⏳",
+        parse_mode="Markdown",
+    )
+    reply = await asyncio.to_thread(consult_peter, question, mode, asker)
     await _send_long(update, reply)
 
 
@@ -434,6 +488,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("macro", cmd_macro))
     app.add_handler(CommandHandler("earnings", cmd_earnings))
     app.add_handler(CommandHandler("thesis", cmd_thesis))
+    app.add_handler(CommandHandler("peter", cmd_peter))
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(CommandHandler("newsletter", cmd_newsletter))
@@ -457,6 +512,7 @@ async def _set_commands(app: Application) -> None:
         ("macro",    "FX + central-bank brief"),
         ("earnings", "Earnings review for a ticker"),
         ("thesis",   "AI thesis tracker"),
+        ("peter",    "Ask Peter (family CFO) — portfolio / couple / fx / biz"),
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
         ("newsletter", "Newsletter research brief"),

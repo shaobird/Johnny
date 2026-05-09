@@ -350,7 +350,7 @@ _HANDLERS = {
     "get_recent_newsletter_topics": lambda inp: get_recent_topics(inp.get("weeks", 8)),
     "get_top_newsletters":       lambda _:   get_top_performers(),
     "prepare_newsletter_brief":  lambda inp: prepare_research_brief(inp.get("angle", "")),
-    "consult_peter":             lambda inp: consult_peter(inp["question"], inp.get("mode", "auto")),
+    "consult_peter":             lambda inp: consult_peter(inp["question"], inp.get("mode", "auto"), inp.get("asker", "boss")),
 }
 
 

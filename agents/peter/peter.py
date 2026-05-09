@@ -31,13 +31,15 @@ _MODEL = "claude-sonnet-4-6"
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
-def consult_peter(question: str, mode: str = "auto") -> str:
+def consult_peter(question: str, mode: str = "auto", asker: str = "boss") -> str:
     """
     Ask Peter a financial-services question.
 
     Args:
       question: The question, ideally framed with any context Johnny has gathered.
       mode:     One of portfolio | couple | fx | biz | auto. Defaults to auto.
+      asker:    Who is asking — 'boss' or 'yvonne'. Peter addresses each appropriately
+                but always reasons over the joint household balance sheet.
     """
     mode = (mode or "auto").lower().strip()
     if mode not in AVAILABLE_MODES:
@@ -45,6 +47,9 @@ def consult_peter(question: str, mode: str = "auto") -> str:
             f"Peter: unknown mode '{mode}'. "
             f"Use one of: {', '.join(AVAILABLE_MODES)}."
         )
+    asker = (asker or "boss").lower().strip()
+    if asker not in ("boss", "yvonne"):
+        asker = "boss"
 
     persona = (_BASE / "persona.md").read_text(encoding="utf-8")
     skills = "\n\n".join(
@@ -55,8 +60,24 @@ def consult_peter(question: str, mode: str = "auto") -> str:
     watchlist = _load_data("watchlist")
     couple = _load_data("couple")
 
+    if asker == "boss":
+        asker_guidance = "Use the Boss nickname when natural."
+    else:
+        asker_guidance = (
+            "Yvonne is part of the couple — treat her as an equal principal, not a "
+            "dependent. When the question affects only her individually, scope your "
+            "answer to her side of the balance sheet."
+        )
+    asker_note = (
+        "━━━ WHO IS ASKING ━━━\n"
+        f"This question is from **{asker.title()}**. Address them directly by name. "
+        f"{asker_guidance}\n"
+        "Always reason over the JOINT household picture even when answering one of them.\n"
+    )
+
     system = (
         f"{persona}\n\n"
+        f"{asker_note}\n"
         f"━━━ ACTIVE SKILLS ━━━\n{skills}\n\n"
         f"━━━ HOUSEHOLD DATA ━━━\n"
         f"WATCHLIST:\n{watchlist}\n\n"
@@ -72,7 +93,7 @@ def consult_peter(question: str, mode: str = "auto") -> str:
     else:
         instruction = f"Use the active skill ({mode}) to answer."
 
-    user_msg = f"{instruction}\n\n━━━ QUESTION ━━━\n{question}"
+    user_msg = f"{instruction}\n\n━━━ QUESTION (from {asker.title()}) ━━━\n{question}"
 
     tools = [
         {"type": "web_search_20260209", "name": "web_search"},
