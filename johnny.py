@@ -294,7 +294,16 @@ _TOOLS = [
             "(macro, central banks, carry, post-trade journal), and construction biz "
             "finance (project P&L, cashflow, contracts, SG corporate tax framing). "
             "Peter has access to the household watchlist + couple profile and live web "
-            "search. Call him for ANY finance question — never answer finance yourself."
+            "search. Call him for ANY finance question — never answer finance yourself.\n\n"
+            "ROUTING: pick the most specific mode that fits — don't default to 'auto' if "
+            "you can tell which domain the question lives in. Heuristics:\n"
+            "  • portfolio — mentions of holdings, tickers, allocation, exposure, rebalancing\n"
+            "  • couple    — joint goals, savings rate, retirement, BTO, kids, Yvonne, CPF\n"
+            "  • fx        — pairs, central banks, carry, macro data, trade journal\n"
+            "  • biz       — project P&L, cashflow, vendors, contracts, AR, GST, IRAS\n"
+            "  • auto      — only when the question genuinely spans multiple domains\n"
+            "Tell the user briefly which mode you routed to before reporting Peter's answer "
+            "(e.g. 'Routed to Peter [couple] —')."
         ),
         "input_schema": {
             "type": "object",
@@ -310,12 +319,12 @@ _TOOLS = [
                     "type": "string",
                     "enum": ["portfolio", "couple", "fx", "biz", "auto"],
                     "description": (
-                        "Which Peter skill to engage. 'auto' lets Peter pick. "
-                        "Use a specific mode when the question is clearly one domain."
+                        "Which Peter skill to engage. Pick the most specific match. "
+                        "Reserve 'auto' for genuinely multi-domain questions."
                     ),
                 },
             },
-            "required": ["question"],
+            "required": ["question", "mode"],
         },
     },
     {

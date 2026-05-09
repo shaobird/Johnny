@@ -16,5 +16,6 @@ with Singapore household context and no MCP / Cowork dependencies.
 """
 
 from .peter import consult_peter, AVAILABLE_MODES
+from .router import suggest_mode, format_suggestion
 
-__all__ = ["consult_peter", "AVAILABLE_MODES"]
+__all__ = ["consult_peter", "AVAILABLE_MODES", "suggest_mode", "format_suggestion"]

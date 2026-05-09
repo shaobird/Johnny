@@ -39,7 +39,7 @@ from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
 from agents.research import research_topic, macro_brief, earnings_brief, thesis_update
-from agents.peter import consult_peter
+from agents.peter import consult_peter, suggest_mode, format_suggestion
 from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from agents.files import parse_file
@@ -170,30 +170,73 @@ async def cmd_peter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     args = list(context.args or [])
-    mode = "auto"
+    explicit_mode = None
     if args and args[0].lower() in ("portfolio", "couple", "fx", "biz", "auto"):
-        mode = args.pop(0).lower()
+        explicit_mode = args.pop(0).lower()
     question = " ".join(args).strip()
 
     if not question:
         await update.message.reply_text(
             "Usage: /peter [mode] <question>\n"
-            "Modes: portfolio | couple | fx | biz | auto (default)\n\n"
+            "Modes: portfolio | couple | fx | biz | auto\n"
+            "(omit the mode and Peter picks the best fit himself)\n\n"
             "Examples:\n"
             "  /peter how is our AI exposure looking?\n"
             "  /peter couple what's our progress on the BTO downpayment?\n"
-            "  /peter fx what's the setup for tonight's NY session?"
+            "  /peter fx what's the setup for tonight's NY session?\n\n"
+            "Tip: /whichpeter <question> tells you the suggested mode without running Peter."
         )
         return
 
+    if explicit_mode and explicit_mode != "auto":
+        mode = explicit_mode
+        suggestion_line = f"📍 Peter mode: *{mode}* (you set it)"
+    else:
+        suggested, reason = suggest_mode(question)
+        mode = suggested
+        suggestion_line = format_suggestion(suggested, reason)
+
     label = asker.title()
     await update.message.reply_text(
-        f"📒 Peter is on it for *{label}* — mode: _{mode}_\n"
+        f"📒 Peter is on it for *{label}*\n{suggestion_line}\n"
         "Takes ~30–60s ⏳",
         parse_mode="Markdown",
     )
     reply = await asyncio.to_thread(consult_peter, question, mode, asker)
     await _send_long(update, reply)
+
+
+async def cmd_whichpeter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Tell the user which Peter mode fits their question, without running Peter."""
+    asker = _asker_for(update.effective_chat.id)
+    if asker is None:
+        await update.message.reply_text("Peter is private — your chat isn't authorized.")
+        return
+
+    question = " ".join(context.args or []).strip()
+    if not question:
+        await update.message.reply_text(
+            "Usage: /whichpeter <question>\n"
+            "Returns the recommended Peter mode (portfolio | couple | fx | biz)\n"
+            "and the reasoning, without spending the API call to actually run Peter.\n\n"
+            "Example: /whichpeter should we add to NVDA before earnings?"
+        )
+        return
+
+    mode, reason = suggest_mode(question)
+    if mode == "auto":
+        msg = (
+            f"🤔 No clear single best fit — {reason}.\n"
+            "You can either run `/peter <question>` and let Peter pick across all four,\n"
+            "or specify a mode: `/peter portfolio|couple|fx|biz <question>`."
+        )
+    else:
+        msg = (
+            f"📍 Best fit: *{mode}* — {reason}.\n\n"
+            f"Run it with: `/peter {mode} {question}`\n"
+            f"Or just `/peter {question}` and Peter will route the same way."
+        )
+    await update.message.reply_text(msg, parse_mode="Markdown")
 
 
 async def cmd_thesis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -212,6 +255,19 @@ async def cmd_thesis(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     text = update.message.text
+
+    # Yvonne's chat: route free-text straight to Peter (Johnny is Boss's persona).
+    asker = _asker_for(update.effective_chat.id)
+    if asker == "yvonne":
+        mode, reason = suggest_mode(text)
+        await update.message.reply_text(
+            f"📒 Forwarding to Peter for you, Yvonne\n{format_suggestion(mode, reason)}\n"
+            "Takes ~30–60s ⏳",
+            parse_mode="Markdown",
+        )
+        reply = await asyncio.to_thread(consult_peter, text, mode, "yvonne")
+        await _send_long(update, reply)
+        return
 
     history = _history.get(user_id, [])
     reply = johnny.chat(text, history)
@@ -489,6 +545,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("earnings", cmd_earnings))
     app.add_handler(CommandHandler("thesis", cmd_thesis))
     app.add_handler(CommandHandler("peter", cmd_peter))
+    app.add_handler(CommandHandler("whichpeter", cmd_whichpeter))
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(CommandHandler("newsletter", cmd_newsletter))
@@ -512,7 +569,8 @@ async def _set_commands(app: Application) -> None:
         ("macro",    "FX + central-bank brief"),
         ("earnings", "Earnings review for a ticker"),
         ("thesis",   "AI thesis tracker"),
-        ("peter",    "Ask Peter (family CFO) — portfolio / couple / fx / biz"),
+        ("peter",    "Ask Peter (family CFO) — auto-routes to best mode"),
+        ("whichpeter","Suggest the best Peter mode without running it"),
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
         ("newsletter", "Newsletter research brief"),
