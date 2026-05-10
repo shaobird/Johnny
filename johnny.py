@@ -28,6 +28,9 @@ from agents.newsletter import (
 )
 from agents.mo import search as mo_search, get_context as mo_context, list_files as mo_list, get_file_content as mo_get
 from agents.peter import log_expense, log_invoice, get_finance_summary, get_job_summary
+from agents.kanaan import (
+    log_tech_decision, log_tech_task, complete_task as complete_tech_task, get_dev_status,
+)
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -46,6 +49,10 @@ _TOOL_KEYWORDS = (
     "save note", "remember this", "log ", "record ",
     "newsletter", "brief",
     "analyse this", "analyze this",
+    "expense", "invoice", "finance", "budget", "cost", "job summary",
+    "tech", "build", "stack", "tool", "backlog", "software", "automation",
+    "consult", "team brief", "ask the team",
+    "file", "storage", "document", "upload",
 )
 
 
@@ -88,7 +95,19 @@ You address the user as "Boss" unless their name is in the profile below.
 • Val     — Chief of Fitness: Strava + Hevy, training analysis, lactate zones, HYROX/half marathon progress
 • Sally   — Chief of Market Communications: newsletter performance, topic memory, research briefs
 • Mo      — Chief Warehouse Manager: stores and retrieves all files, provides context to other agents
-• Peter   — Chief of Finance: expense tracking, invoices, job costing, budget summaries
+• Peter   — Chief Finance & Investment Officer: forex trading strategy, investment thesis, capital allocation.
+            Channel Peter when the user asks about where to deploy capital, investment opportunities, or market positioning.
+• Kanaan  — Chief of Technology & Development: software architecture, AI/automation choices, Johnny's own
+            development roadmap, tech stack decisions for the construction business. Channel Kanaan when the
+            user asks "should I build/buy X", "which tool", or anything technical.
+
+CROSS-AGENT COLLABORATION:
+When a question spans multiple domains, use the consult_team tool to pull all relevant agents simultaneously.
+Examples:
+  • "Should I buy this equipment?" → consult peter (financing) + kanaan (tech fit) + mo (any stored specs)
+  • "What's my position across work and markets?" → consult peter + smarty + calendar
+  • "Plan my week" → consult val (training load) + calendar + smarty (key events)
+Always synthesise the team's inputs into one clear recommendation rather than just listing what each said.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ STRATEGIC PLAYBOOK ━━━
@@ -130,6 +149,51 @@ You can save notes to your memory using the save_note tool. Use it when you:
 
 
 # ── Tools ─────────────────────────────────────────────────────────────────────
+
+# ── Cross-agent consultation ──────────────────────────────────────────────────
+
+def _consult_team(topic: str, agents: list) -> str:
+    """Fan out to multiple agents in parallel and collect their perspectives."""
+    from agents.smarty import get_full_research_brief
+
+    agent_fns = {
+        "peter":  lambda: get_finance_summary(),
+        "val":    lambda: get_fitness_summary(),
+        "smarty": lambda: get_high_impact_news(),
+        "sally":  lambda: get_recent_topics(),
+        "mo":     lambda: mo_context(topic),
+        "kanaan": lambda: get_dev_status(),
+    }
+
+    selected = {a.lower(): agent_fns[a.lower()] for a in agents if a.lower() in agent_fns}
+    if not selected:
+        return f"No valid agent names provided. Available: {', '.join(agent_fns)}"
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {name: executor.submit(fn) for name, fn in selected.items()}
+        results = {}
+        for name, fut in futures.items():
+            try:
+                results[name] = fut.result(timeout=120)
+            except Exception as e:
+                results[name] = f"Error: {e}"
+
+    agent_labels = {
+        "peter": "PETER (Finance & Investment)",
+        "val": "VAL (Fitness)",
+        "smarty": "SMARTY (Research & Markets)",
+        "sally": "SALLY (Market Communications)",
+        "mo": "MO (Warehouse — relevant docs)",
+        "kanaan": "KANAAN (Tech & Development)",
+    }
+
+    parts = [f"━━━ TEAM BRIEF: {topic} ━━━\n"]
+    for agent, output in results.items():
+        label = agent_labels.get(agent, agent.upper())
+        parts.append(f"\n🔹 {label}\n{output}")
+    parts.append("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    return "\n".join(parts)
+
 
 _TOOLS = [
     {
@@ -393,6 +457,84 @@ _TOOLS = [
             "required": ["job"],
         },
     },
+    # ── Kanaan tools ──────────────────────────────────────────────────────────
+    {
+        "name": "log_tech_decision",
+        "description": (
+            "Kanaan logs a technology decision — build vs. buy, tool selection, "
+            "architecture choice, AI/automation strategy. Use when a tech direction is confirmed."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "decision":  {"type": "string", "description": "What was decided."},
+                "rationale": {"type": "string", "description": "Why this choice was made."},
+                "status":    {"type": "string", "description": "decided/pending/deferred/rejected"},
+            },
+            "required": ["decision", "rationale"],
+        },
+    },
+    {
+        "name": "log_tech_task",
+        "description": (
+            "Kanaan adds a development task to the backlog — for Johnny itself or "
+            "the construction business tech stack. Use when the user flags something to build."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task":     {"type": "string", "description": "Task description."},
+                "priority": {"type": "string", "description": "high/medium/low"},
+                "notes":    {"type": "string", "description": "Extra context or acceptance criteria."},
+            },
+            "required": ["task"],
+        },
+    },
+    {
+        "name": "complete_tech_task",
+        "description": "Mark a backlog task as done by partial name match.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task": {"type": "string", "description": "Task name or partial match."},
+            },
+            "required": ["task"],
+        },
+    },
+    {
+        "name": "get_dev_status",
+        "description": (
+            "Get Kanaan's current development backlog and recent tech decisions. "
+            "Use when the user asks about Johnny's roadmap, open tech tasks, or past decisions."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    # ── Cross-agent collaboration ──────────────────────────────────────────────
+    {
+        "name": "consult_team",
+        "description": (
+            "Fan out to multiple specialist agents simultaneously and get their perspectives on a topic. "
+            "Use when a question spans multiple domains — e.g. finance + tech, fitness + schedule, "
+            "market intel + construction. Each agent runs in parallel. You then synthesise the results. "
+            "Available agents: peter (finance/investment), val (fitness), smarty (forex/news/intel), "
+            "sally (newsletter/market comms), mo (stored docs on topic), kanaan (tech/dev)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": "The question or topic each agent should address.",
+                },
+                "agents": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Agent names to consult: peter, val, smarty, sally, mo, kanaan",
+                },
+            },
+            "required": ["topic", "agents"],
+        },
+    },
 ]
 
 _HANDLERS = {
@@ -418,6 +560,11 @@ _HANDLERS = {
     "log_invoice":               lambda inp: log_invoice(inp["amount"], inp["client"], inp["description"], inp.get("job", ""), inp.get("status", "pending"), inp.get("currency", "SGD")),
     "get_finance_summary":       lambda inp: get_finance_summary(inp.get("days", 30)),
     "get_job_summary":           lambda inp: get_job_summary(inp["job"]),
+    "log_tech_decision":         lambda inp: log_tech_decision(inp["decision"], inp["rationale"], inp.get("status", "decided")),
+    "log_tech_task":             lambda inp: log_tech_task(inp["task"], inp.get("priority", "medium"), inp.get("notes", "")),
+    "complete_tech_task":        lambda inp: complete_tech_task(inp["task"]),
+    "get_dev_status":            lambda _:   get_dev_status(),
+    "consult_team":              lambda inp: _consult_team(inp["topic"], inp["agents"]),
 }
 
 
