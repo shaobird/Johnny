@@ -27,10 +27,15 @@ from agents.newsletter import (
     prepare_research_brief,
 )
 from agents.mo import search as mo_search, get_context as mo_context, list_files as mo_list, get_file_content as mo_get
-from agents.peter import log_expense, log_invoice, get_finance_summary, get_job_summary
+from agents.lorrie import (
+    log_expense, log_invoice, update_invoice_status,
+    set_budget, get_budget_status, get_finance_summary, get_job_summary,
+)
+from agents.peter import log_trade, update_trade, get_trade_log, get_investment_brief
 from agents.kanaan import (
     log_tech_decision, log_tech_task, complete_task as complete_tech_task, get_dev_status,
 )
+from agents.dashboard import get_full_dashboard
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -50,9 +55,12 @@ _TOOL_KEYWORDS = (
     "newsletter", "brief",
     "analyse this", "analyze this",
     "expense", "invoice", "finance", "budget", "cost", "job summary",
-    "tech", "build", "stack", "tool", "backlog", "software", "automation",
+    "trade", "forex", "position", "investment", "capital", "deploy",
+    "tech", "build", "stack", "backlog", "software", "automation",
+    "dashboard", "attention", "alerts", "what needs",
     "consult", "team brief", "ask the team",
     "file", "storage", "document", "upload",
+    "lorrie", "peter", "kanaan", "val", "sally", "smarty", "mo",
 )
 
 
@@ -91,23 +99,27 @@ You address the user as "Boss" unless their name is in the profile below.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ YOUR SPECIALIST AGENTS ━━━
-• Smarty  — Chief of Research: calendar, forex news, daily intel briefing (AI/construction/macro/HYROX)
-• Val     — Chief of Fitness: Strava + Hevy, training analysis, lactate zones, HYROX/half marathon progress
-• Sally   — Chief of Market Communications: newsletter performance, topic memory, research briefs
-• Mo      — Chief Warehouse Manager: stores and retrieves all files, provides context to other agents
-• Peter   — Chief Finance & Investment Officer: forex trading strategy, investment thesis, capital allocation.
-            Channel Peter when the user asks about where to deploy capital, investment opportunities, or market positioning.
-• Kanaan  — Chief of Technology & Development: software architecture, AI/automation choices, Johnny's own
-            development roadmap, tech stack decisions for the construction business. Channel Kanaan when the
-            user asks "should I build/buy X", "which tool", or anything technical.
+Each agent is a mini-coordinator — they pull from their own sub-sources before responding.
+
+• Smarty  — Chief of Research: calendar, forex news, intel briefing (AI/construction/macro/HYROX)
+• Val     — Chief of Fitness: Strava + Hevy, training load, lactate zones, HYROX/half marathon
+• Sally   — Chief of Market Comms: newsletter performance, topic memory, content research briefs
+• Mo      — Chief Warehouse Manager: file storage + retrieval, feeds context to all other agents
+• Lorrie  — Chief of Finance: day-to-day money — expenses, invoices, budgets, cash flow, job costing.
+            Lorrie consults Mo automatically for stored budget/contract docs.
+• Peter   — Chief of Investment: forex positioning, capital allocation, investment thesis.
+            Peter pulls Smarty's live news before giving any trade advice — never advises blind.
+• Kanaan  — Chief of Tech & Dev: software architecture, AI/automation, Johnny's dev roadmap,
+            build vs buy decisions. Kanaan checks Mo for stored specs before advising.
 
 CROSS-AGENT COLLABORATION:
-When a question spans multiple domains, use the consult_team tool to pull all relevant agents simultaneously.
-Examples:
-  • "Should I buy this equipment?" → consult peter (financing) + kanaan (tech fit) + mo (any stored specs)
-  • "What's my position across work and markets?" → consult peter + smarty + calendar
-  • "Plan my week" → consult val (training load) + calendar + smarty (key events)
-Always synthesise the team's inputs into one clear recommendation rather than just listing what each said.
+Use consult_team when a question spans domains. Use get_dashboard when the user wants
+a status check across all agents at once. Examples:
+  • "What needs my attention?" → get_dashboard (all agents check in parallel)
+  • "Should I buy this equipment?" → consult_team: lorrie + kanaan + mo
+  • "What's my financial and market position?" → consult_team: lorrie + peter + smarty
+  • "Plan my week" → consult_team: val + smarty, then check_calendar separately
+Always synthesise team inputs into ONE clear recommendation. Don't just list what each said.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ STRATEGIC PLAYBOOK ━━━
@@ -121,16 +133,23 @@ Reference specific models by name when relevant so the user learns them over tim
 ━━━ SUPERVISOR MINDSET ━━━
 You are NOT a data reporter. You are a synthesiser and advisor.
 
-Step 1 — GATHER: Call all relevant agents before forming any opinion.
-Step 2 — SYNTHESISE: Look for connections across the three domains:
-  • Does a high-impact forex release overlap with a calendar meeting? Flag it.
-  • Are there forex events for the pairs the user watches? Highlight those first.
-  • Has the user been overtraining (consecutive hard sessions, no rest)? Warn them.
-  • Is today's calendar light — a good opportunity to train?
-  • Is the user behind on their weekly fitness goals based on their targets?
-  • Are there patterns worth noting (always skips Mondays, pace improving, etc.)?
-Step 3 — PRIORITISE: Lead with the 2–3 things that matter MOST today.
-Step 4 — ADVISE: End with one clear action recommendation.
+Step 1 — GATHER: Call only the agents that are actually needed. Don't call all agents
+  for a simple question — that wastes API budget. Be surgical: one question → one or two agents max.
+Step 2 — SYNTHESISE: Look for connections across domains:
+  • Forex event overlapping a calendar meeting? Flag it.
+  • Consecutive hard training sessions? Warn before overtraining hits.
+  • Budget overrun on a job that also has an overdue invoice? Lorrie + context together.
+  • Tech decision with capital implications? Kanaan + Peter together.
+Step 3 — PRIORITISE: Lead with the 2–3 things that matter MOST. Ruthlessly cut the rest.
+Step 4 — ADVISE: End with one clear action. Not three. One.
+
+COST & EFFICIENCY RULES:
+  • Gemini (free) handles simple chat. Never route simple conversation to Anthropic.
+  • Use Sonnet for tool calls, Opus only for full morning briefings.
+  • consult_team runs agents in parallel — always prefer that over sequential calls.
+  • If Mo already has the answer in stored files, don't call a slow external API.
+  • Intel briefing (Gemini search) is expensive — only run it when explicitly requested.
+  • Keep responses tight. One clear answer beats three verbose ones every time.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ MEMORY ━━━
@@ -157,7 +176,8 @@ def _consult_team(topic: str, agents: list) -> str:
     from agents.smarty import get_full_research_brief
 
     agent_fns = {
-        "peter":  lambda: get_finance_summary(),
+        "lorrie": lambda: get_finance_summary(),
+        "peter":  lambda: get_investment_brief(),
         "val":    lambda: get_fitness_summary(),
         "smarty": lambda: get_high_impact_news(),
         "sally":  lambda: get_recent_topics(),
@@ -179,11 +199,12 @@ def _consult_team(topic: str, agents: list) -> str:
                 results[name] = f"Error: {e}"
 
     agent_labels = {
-        "peter": "PETER (Finance & Investment)",
-        "val": "VAL (Fitness)",
+        "lorrie": "LORRIE (Finance — budgets & cash flow)",
+        "peter":  "PETER (Investment — forex & capital)",
+        "val":    "VAL (Fitness)",
         "smarty": "SMARTY (Research & Markets)",
-        "sally": "SALLY (Market Communications)",
-        "mo": "MO (Warehouse — relevant docs)",
+        "sally":  "SALLY (Market Communications)",
+        "mo":     "MO (Warehouse — relevant docs)",
         "kanaan": "KANAAN (Tech & Development)",
     }
 
@@ -404,24 +425,25 @@ _TOOLS = [
             "required": ["filename"],
         },
     },
+    # ── Lorrie tools (Chief of Finance — day-to-day money tracking) ──────────
     {
         "name": "log_expense",
-        "description": "Peter logs an expense for the construction business.",
+        "description": "Lorrie logs an expense for the construction business.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "amount":      {"type": "number",  "description": "Amount spent."},
-                "category":    {"type": "string",  "description": "materials/labour/overhead/equipment/other"},
-                "description": {"type": "string",  "description": "What was spent on."},
-                "job":         {"type": "string",  "description": "Job or project name (optional)."},
-                "currency":    {"type": "string",  "description": "Currency code, default SGD."},
+                "amount":      {"type": "number", "description": "Amount spent."},
+                "category":    {"type": "string", "description": "materials/labour/overhead/equipment/other"},
+                "description": {"type": "string", "description": "What was spent on."},
+                "job":         {"type": "string", "description": "Job or project name (optional)."},
+                "currency":    {"type": "string", "description": "Currency code, default SGD."},
             },
             "required": ["amount", "category", "description"],
         },
     },
     {
         "name": "log_invoice",
-        "description": "Peter logs an invoice issued to a client.",
+        "description": "Lorrie logs an invoice issued to a client.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -436,8 +458,43 @@ _TOOLS = [
         },
     },
     {
+        "name": "update_invoice_status",
+        "description": "Lorrie updates an invoice status — e.g. pending → paid or overdue.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "client":     {"type": "string", "description": "Client name (partial match)."},
+                "new_status": {"type": "string", "description": "paid/overdue/pending"},
+            },
+            "required": ["client", "new_status"],
+        },
+    },
+    {
+        "name": "set_budget",
+        "description": "Lorrie sets a monthly (or quarterly/annual) budget limit for an expense category.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "materials/labour/overhead/equipment/other"},
+                "amount":   {"type": "number", "description": "Budget limit amount."},
+                "period":   {"type": "string", "description": "monthly/quarterly/annual (default monthly)"},
+                "currency": {"type": "string", "description": "Currency code, default SGD."},
+            },
+            "required": ["category", "amount"],
+        },
+    },
+    {
+        "name": "get_budget_status",
+        "description": (
+            "Lorrie shows actual spend vs budget for the current month. "
+            "Also queries Mo for any stored budget documents. "
+            "Use when the user asks about spending, budget, or how much has been used."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
         "name": "get_finance_summary",
-        "description": "Peter summarises income vs expenses over the last N days.",
+        "description": "Lorrie summarises income vs expenses over the last N days.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -448,7 +505,7 @@ _TOOLS = [
     },
     {
         "name": "get_job_summary",
-        "description": "Peter summarises all costs and invoices for a specific job.",
+        "description": "Lorrie summarises all costs and invoices for a specific job.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -456,6 +513,69 @@ _TOOLS = [
             },
             "required": ["job"],
         },
+    },
+    # ── Peter tools (Chief of Investment — strategy & forex) ─────────────────
+    {
+        "name": "log_trade",
+        "description": "Peter logs a new forex or investment trade.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pair":      {"type": "string", "description": "Currency pair or asset, e.g. GBP/USD."},
+                "direction": {"type": "string", "description": "long or short."},
+                "entry":     {"type": "number", "description": "Entry price."},
+                "sl":        {"type": "number", "description": "Stop-loss price."},
+                "tp":        {"type": "number", "description": "Take-profit price."},
+                "rationale": {"type": "string", "description": "Why you took this trade."},
+                "size":      {"type": "number", "description": "Position size in lots (default 1.0)."},
+            },
+            "required": ["pair", "direction", "entry", "sl", "tp", "rationale"],
+        },
+    },
+    {
+        "name": "update_trade",
+        "description": "Peter closes or updates an open trade.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pair":       {"type": "string", "description": "Currency pair to update."},
+                "status":     {"type": "string", "description": "closed/stopped/cancelled"},
+                "exit_price": {"type": "number", "description": "Exit price (for PnL calc)."},
+                "notes":      {"type": "string", "description": "Post-trade notes."},
+            },
+            "required": ["pair", "status"],
+        },
+    },
+    {
+        "name": "get_trade_log",
+        "description": "Peter returns trade history. Use open_only=true to see live positions.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "open_only": {"type": "boolean", "description": "True = open positions only."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "get_investment_brief",
+        "description": (
+            "Peter's full investment view: open positions, track record, and today's live forex events. "
+            "Peter pulls Smarty's news feed internally before advising. "
+            "Use when user asks about trades, forex, where to deploy capital."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    # ── Dashboard ─────────────────────────────────────────────────────────────
+    {
+        "name": "get_dashboard",
+        "description": (
+            "Pull the live dashboard — all agents check their state in parallel and return "
+            "anything that needs attention (overdue invoices, budget alerts, open trades, "
+            "backlog tasks, overdue newsletters). Use when the user asks 'what needs my attention', "
+            "'any alerts', or 'dashboard'."
+        ),
+        "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     # ── Kanaan tools ──────────────────────────────────────────────────────────
     {
@@ -514,10 +634,10 @@ _TOOLS = [
         "name": "consult_team",
         "description": (
             "Fan out to multiple specialist agents simultaneously and get their perspectives on a topic. "
-            "Use when a question spans multiple domains — e.g. finance + tech, fitness + schedule, "
-            "market intel + construction. Each agent runs in parallel. You then synthesise the results. "
-            "Available agents: peter (finance/investment), val (fitness), smarty (forex/news/intel), "
-            "sally (newsletter/market comms), mo (stored docs on topic), kanaan (tech/dev)."
+            "Use when a question spans multiple domains. Each agent runs in parallel — fast and efficient. "
+            "Available agents: lorrie (finance/budgets), peter (investment/forex), val (fitness), "
+            "smarty (news/intel), sally (newsletter), mo (stored docs on topic), kanaan (tech/dev). "
+            "You synthesise the results into one recommendation."
         ),
         "input_schema": {
             "type": "object",
@@ -556,15 +676,27 @@ _HANDLERS = {
     "mo_search":                 lambda inp: mo_search(inp["query"], inp.get("category", "")),
     "mo_list":                   lambda inp: mo_list(inp.get("category", "")),
     "mo_get_file":               lambda inp: mo_get(inp["filename"]),
+    # Lorrie — finance operations
     "log_expense":               lambda inp: log_expense(inp["amount"], inp["category"], inp["description"], inp.get("job", ""), inp.get("currency", "SGD")),
     "log_invoice":               lambda inp: log_invoice(inp["amount"], inp["client"], inp["description"], inp.get("job", ""), inp.get("status", "pending"), inp.get("currency", "SGD")),
+    "update_invoice_status":     lambda inp: update_invoice_status(inp["client"], inp["new_status"]),
+    "set_budget":                lambda inp: set_budget(inp["category"], inp["amount"], inp.get("period", "monthly"), inp.get("currency", "SGD")),
+    "get_budget_status":         lambda _:   get_budget_status(),
     "get_finance_summary":       lambda inp: get_finance_summary(inp.get("days", 30)),
     "get_job_summary":           lambda inp: get_job_summary(inp["job"]),
+    # Peter — investment operations
+    "log_trade":                 lambda inp: log_trade(inp["pair"], inp["direction"], inp["entry"], inp["sl"], inp["tp"], inp["rationale"], inp.get("size", 1.0)),
+    "update_trade":              lambda inp: update_trade(inp["pair"], inp["status"], inp.get("exit_price", 0.0), inp.get("notes", "")),
+    "get_trade_log":             lambda inp: get_trade_log(inp.get("open_only", False)),
+    "get_investment_brief":      lambda _:   get_investment_brief(),
+    # Kanaan — tech operations
     "log_tech_decision":         lambda inp: log_tech_decision(inp["decision"], inp["rationale"], inp.get("status", "decided")),
     "log_tech_task":             lambda inp: log_tech_task(inp["task"], inp.get("priority", "medium"), inp.get("notes", "")),
     "complete_tech_task":        lambda inp: complete_tech_task(inp["task"]),
     "get_dev_status":            lambda _:   get_dev_status(),
+    # Cross-agent
     "consult_team":              lambda inp: _consult_team(inp["topic"], inp["agents"]),
+    "get_dashboard":             lambda _:   get_full_dashboard(),
 }
 
 

@@ -117,6 +117,36 @@ def get_top_performers(limit: int = 5) -> str:
 
 # ── Research brief ───────────────────────────────────────────────────────────
 
+def check_alerts() -> list:
+    """Return newsletter alerts for the shared dashboard."""
+    data = mem.load()
+    newsletters = data.get("newsletters", [])
+    if not newsletters:
+        return []
+
+    last = newsletters[-1]
+    try:
+        last_ts = datetime.fromisoformat(last["ts"])
+        days_since = (datetime.now() - last_ts).days
+        if days_since > 21:
+            return [{
+                "agent": "Sally",
+                "priority": "medium",
+                "category": "comms",
+                "message": f"No newsletter in {days_since} days — last: \"{last['title']}\"",
+            }]
+        if days_since > 14:
+            return [{
+                "agent": "Sally",
+                "priority": "low",
+                "category": "comms",
+                "message": f"Newsletter overdue by {days_since - 14} days — consider publishing",
+            }]
+    except Exception:
+        pass
+    return []
+
+
 def prepare_research_brief(angle: str = "") -> str:
     """
     Generate a fresh research brief for the next newsletter.

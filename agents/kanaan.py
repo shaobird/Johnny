@@ -115,3 +115,38 @@ def get_dev_status() -> str:
 
     lines.append("\n— Kanaan")
     return "\n".join(lines)
+
+
+# ── Dashboard alerts ───────────────────────────────────────────────────────────
+
+def check_alerts() -> list:
+    """Return tech/dev alerts for the shared dashboard."""
+    alerts = []
+    log = _load_log()
+
+    high_tasks = [
+        e for e in log
+        if e.get("type") == "task" and not e.get("done") and e.get("priority") == "high"
+    ]
+    if high_tasks:
+        tasks_str = " | ".join(t["task"][:35] for t in high_tasks[:3])
+        alerts.append({
+            "agent": "Kanaan",
+            "priority": "medium",
+            "category": "tech",
+            "message": f"{len(high_tasks)} high-priority task(s) open: {tasks_str}",
+        })
+
+    pending_decisions = [
+        e for e in log
+        if e.get("type") == "decision" and e.get("status") == "pending"
+    ]
+    if pending_decisions:
+        alerts.append({
+            "agent": "Kanaan",
+            "priority": "low",
+            "category": "tech",
+            "message": f"{len(pending_decisions)} tech decision(s) pending sign-off",
+        })
+
+    return alerts
