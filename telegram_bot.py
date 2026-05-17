@@ -59,7 +59,9 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "  /intel    — AI, construction & macro briefing\n"
         "  /journal  — log a journal entry\n"
         "              e.g. /journal Good Push session today\n"
-        "  /reflect  — Johnny reflects on your last 7 days\n\n"
+        "  /reflect           — Johnny reflects on your last 7 days\n"
+        "  /newsletter        — Newsletter research brief\n"
+        "  /newsletter_draft  — Sally drafts, Johnny QCs → paste into Manus AI\n\n"
         "Or just talk to me normally — I'll remember the conversation."
     )
 
@@ -142,6 +144,26 @@ async def cmd_newsletter(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         "headline, 1-line hook, key points to cover, why it'll resonate. "
         "Avoid topics from the last 6 weeks."
     )
+    await _send_long(update, reply)
+
+
+async def cmd_newsletter_draft(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Sally drafts the full newsletter, Johnny QCs it, user gets a Manus-AI-ready copy."""
+    angle = " ".join(context.args) if context.args else ""
+    await update.message.reply_text(
+        "📝 Sally is drafting your newsletter...\n"
+        "Johnny will QC before you see it. Takes 2–3 min ⏳"
+    )
+    angle_note = f"Angle: {angle}. " if angle else ""
+    prompt = (
+        f"{angle_note}Draft a complete newsletter for me. "
+        "Call draft_newsletter to get Sally's draft, then QC it: "
+        "improve the subject line if it's weak, tighten the copy, "
+        "make sure the CTA is sharp and clear. "
+        "Return ONLY the final polished newsletter (ready to paste into Manus AI for design), "
+        "then add a short section '— Johnny's QC' with max 3 bullet points on what you changed and why."
+    )
+    reply = await asyncio.to_thread(johnny.chat, prompt)
     await _send_long(update, reply)
 
 
@@ -386,6 +408,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("reflect", cmd_reflect))
     app.add_handler(CommandHandler("newsletter", cmd_newsletter))
+    app.add_handler(CommandHandler("newsletter_draft", cmd_newsletter_draft))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
@@ -405,4 +428,5 @@ async def _set_commands(app: Application) -> None:
         ("journal",  "Log a journal entry"),
         ("reflect",  "Reflect on last 7 days"),
         ("newsletter", "Newsletter research brief"),
+        ("newsletter_draft", "Sally drafts + Johnny QCs — paste into Manus AI"),
     ])

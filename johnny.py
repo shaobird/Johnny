@@ -25,6 +25,7 @@ from agents.newsletter import (
     get_recent_topics,
     get_top_performers,
     prepare_research_brief,
+    draft_newsletter,
 )
 from agents.mo import search as mo_search, get_context as mo_context, list_files as mo_list, get_file_content as mo_get
 from agents.lorrie import (
@@ -52,7 +53,7 @@ _TOOL_KEYWORDS = (
     "intel", "news", "briefing",
     "email", "inbox", "gmail",
     "save note", "remember this", "log ", "record ",
-    "newsletter", "brief",
+    "newsletter", "brief", "draft", "write newsletter", "create newsletter",
     "analyse this", "analyze this",
     "expense", "invoice", "finance", "budget", "cost", "job summary",
     "trade", "forex", "position", "investment", "capital", "deploy",
@@ -103,7 +104,10 @@ Each agent is a mini-coordinator — they pull from their own sub-sources before
 
 • Smarty  — Chief of Research: calendar, forex news, intel briefing (AI/construction/macro/HYROX)
 • Val     — Chief of Fitness: Strava + Hevy, training load, lactate zones, HYROX/half marathon
-• Sally   — Chief of Market Comms: newsletter performance, topic memory, content research briefs
+• Sally   — Chief of Market Comms: newsletter performance, topic memory, research briefs, full drafts.
+            Sally drafts — you QC. When drafting a newsletter: call draft_newsletter, review Sally's
+            copy, make direct improvements (don't just comment), return the polished final draft +
+            3 QC notes at the bottom explaining what you changed and why. User pastes it into Manus AI.
 • Mo      — Chief Warehouse Manager: file storage + retrieval, feeds context to all other agents
 • Lorrie  — Chief of Finance: day-to-day money — expenses, invoices, budgets, cash flow, job costing.
             Lorrie consults Mo automatically for stored budget/contract docs.
@@ -372,6 +376,25 @@ _TOOLS = [
             "type": "object",
             "properties": {
                 "angle": {"type": "string", "description": "Optional angle or theme to focus on."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "draft_newsletter",
+        "description": (
+            "Sally drafts a full newsletter — subject line, headline, body, CTA. "
+            "She checks recent topics, pulls today's intel, then writes the complete copy. "
+            "After calling this, YOU (Johnny) must QC the draft: improve the subject line if weak, "
+            "tighten the copy, ensure CTA is sharp, fix any factual issues. "
+            "Return the polished final draft + brief QC notes at the bottom. "
+            "Use when the user asks to write, draft, or create a newsletter."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "angle": {"type": "string", "description": "Angle or theme for the newsletter."},
+                "topic": {"type": "string", "description": "Specific topic to focus on."},
             },
             "required": [],
         },
@@ -672,6 +695,7 @@ _HANDLERS = {
     "get_recent_newsletter_topics": lambda inp: get_recent_topics(inp.get("weeks", 8)),
     "get_top_newsletters":       lambda _:   get_top_performers(),
     "prepare_newsletter_brief":  lambda inp: prepare_research_brief(inp.get("angle", "")),
+    "draft_newsletter":          lambda inp: draft_newsletter(inp.get("angle", ""), inp.get("topic", "")),
     "ask_mo":                    lambda inp: mo_context(inp["topic"]),
     "mo_search":                 lambda inp: mo_search(inp["query"], inp.get("category", "")),
     "mo_list":                   lambda inp: mo_list(inp.get("category", "")),

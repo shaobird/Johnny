@@ -1,11 +1,12 @@
 """
 Sally — Chief of Market Communications
 
-Sally manages all outbound content and newsletter operations.
-Three jobs:
+Sally manages all outbound content and newsletter operations:
   1. Track which newsletters performed best (open rate, click rate)
   2. Remember recent topics so Johnny doesn't suggest repeats
   3. Pull intel briefing data as raw research input
+  4. Draft full newsletters — subject line, headline, body, CTA
+     (Johnny QCs before anything goes to the user)
 """
 
 from datetime import datetime, timedelta
@@ -113,6 +114,85 @@ def get_top_performers(limit: int = 5) -> str:
             f"(topic: {nl['topic']})"
         )
     return f"TOP {limit} NEWSLETTERS BY OPEN RATE:\n" + "\n".join(lines)
+
+
+# ── Newsletter drafting ──────────────────────────────────────────────────────
+
+def draft_newsletter(angle: str = "", topic: str = "") -> str:
+    """
+    Sally drafts a full, ready-to-paste newsletter.
+    She checks recent topics, pulls today's intel, then writes the complete copy.
+    Uses Gemini (free) first, falls back to Haiku.
+    Johnny QCs before this reaches the user.
+    """
+    from config import GEMINI_API_KEY, ANTHROPIC_API_KEY
+
+    recent = get_recent_topics(weeks=6)
+    top = get_top_performers(limit=3)
+
+    print("[Sally] Pulling intel for draft...")
+    try:
+        intel = get_intel_briefing()
+    except Exception as e:
+        intel = f"Intel pull failed: {e}"
+
+    angle_line = f"REQUESTED ANGLE: {angle}" if angle else "ANGLE: Your best judgment based on the intel below"
+    topic_line = f"TOPIC FOCUS: {topic}\n" if topic else ""
+
+    prompt = f"""You are Sally, Chief of Market Communications for a Singapore construction business newsletter.
+
+{angle_line}
+{topic_line}
+RECENT TOPICS COVERED — DO NOT repeat these:
+{recent}
+
+TOP PERFORMING NEWSLETTERS — emulate what resonates:
+{top}
+
+TODAY'S INTEL — use as source material:
+{intel}
+
+Write a complete, ready-to-send newsletter. Structure:
+
+SUBJECT LINE: [under 60 characters — must earn the open]
+
+HEADLINE: [punchy main headline]
+
+[Full newsletter body]
+• Opening hook (1 short paragraph — why this matters NOW)
+• 2-3 substantive sections, each with a subheading
+• Practical takeaways the reader can act on this week
+• Closing CTA (clear, single action)
+
+Target audience: Singapore construction business owners and contractors.
+Tone: Professional but direct. Practical value over theory. No fluff.
+Length: 400-550 words for the body.
+Format: Plain text, structured for easy paste into a design tool like Manus AI."""
+
+    # Gemini first — free tier
+    if GEMINI_API_KEY:
+        try:
+            from google import genai
+            from google.genai import types as genai_types
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            response = client.models.generate_content(
+                model="gemini-2.5-pro",
+                contents=prompt,
+            )
+            if response.text:
+                return response.text
+        except Exception as e:
+            print(f"[Sally] Gemini draft failed ({e}), falling back to Haiku...")
+
+    # Fallback: Haiku (cheapest Anthropic model)
+    import anthropic
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1800,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.content[0].text
 
 
 # ── Research brief ───────────────────────────────────────────────────────────
