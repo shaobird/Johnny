@@ -236,7 +236,10 @@ def prepare_research_brief(angle: str = "") -> str:
     top = get_top_performers(limit=5)
 
     print("[Sally] Pulling intel briefing — this may take 1-2 min...")
-    intel = get_intel_briefing()
+    try:
+        intel = get_intel_briefing()
+    except Exception as e:
+        intel = "Intel unavailable."
 
     angle_note = f"REQUESTED ANGLE: {angle}\n\n" if angle else ""
 

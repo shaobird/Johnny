@@ -70,7 +70,19 @@ def store_file(
 
     dest_dir = os.path.join(STORAGE_DIR, category)
     os.makedirs(dest_dir, exist_ok=True)
+
+    # Sanitize filename: strip leading slashes, replace path separators, replace ..
+    filename = filename.lstrip("/\\")
+    filename = filename.replace("..", "__")
+    filename = filename.replace("/", "_").replace("\\", "_")
+
     dest_path = os.path.join(dest_dir, filename)
+
+    # Path traversal guard
+    dest_path = os.path.realpath(dest_path)
+    dest_dir_real = os.path.realpath(dest_dir)
+    if not dest_path.startswith(dest_dir_real):
+        return f"Mo rejected \"{filename}\" — invalid filename (path traversal blocked)."
 
     # Copy file to permanent storage
     shutil.copy2(src_path, dest_path)

@@ -18,6 +18,11 @@ MAX_CHARS = 20000        # Hard cap on total output to protect Claude context
 
 def parse_file(file_path: str) -> str:
     """Parse a file and return a text representation suitable for Claude."""
+    MAX_FILE_BYTES = 50 * 1024 * 1024  # 50 MB
+    if os.path.getsize(file_path) > MAX_FILE_BYTES:
+        size_mb = os.path.getsize(file_path) / 1024 / 1024
+        return f"File too large to parse ({size_mb:.1f} MB). Max is 50 MB."
+
     ext = os.path.splitext(file_path)[1].lower()
 
     try:

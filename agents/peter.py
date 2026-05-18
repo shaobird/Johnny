@@ -46,6 +46,12 @@ def log_trade(
     size: float = 1.0,
 ) -> str:
     """Log a new forex/investment trade. Direction: long/short."""
+    if entry <= 0 or sl <= 0 or tp <= 0:
+        return "Peter rejected trade: entry, SL, and TP must be positive.\n\n— Peter"
+    if direction.lower() == "long" and sl >= entry:
+        return f"Peter rejected trade: SL ({sl}) must be below entry ({entry}) for a long.\n\n— Peter"
+    if direction.lower() == "short" and sl <= entry:
+        return f"Peter rejected trade: SL ({sl}) must be above entry ({entry}) for a short.\n\n— Peter"
     log = _load_trade_log()
     divisor = 100 if "JPY" in pair.upper() else 10000
     risk = abs(entry - sl) * size * divisor
@@ -153,7 +159,7 @@ def get_investment_brief() -> str:
         lines.append("📈 OPEN POSITIONS: None (flat)")
 
     if closed:
-        wins = [t for t in closed if (t.get("pnl_pips") or 0) > 0]
+        wins = [t for t in closed if (t.get("pnl_pips") or 0) > 0]  # breakevens (0) not counted as wins
         win_rate = round(len(wins) / len(closed) * 100) if closed else 0
         lines.append(f"\n📊 TRACK RECORD: {len(closed)} closed | Win rate: {win_rate}%")
 

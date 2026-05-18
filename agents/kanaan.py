@@ -6,6 +6,7 @@ Kanaan owns all things technical for Johnny Zhang:
   • Build vs. buy decisions for the construction business
   • AI/automation tool selection and architecture
   • Tech stack decisions — pragmatic, no hype
+  • Code implementation via Claude API (proposes changes, user approves)
 
 Kanaan speaks in trade-offs. He has strong opinions, shows his working,
 and never recommends a tool he hasn't stress-tested mentally.
@@ -16,7 +17,10 @@ import json
 import os
 from datetime import datetime
 
-TECH_LOG = "storage/tech/kanaan_log.json"
+from config import ANTHROPIC_API_KEY
+
+TECH_LOG    = "storage/tech/kanaan_log.json"
+JOHNNY_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # ── Storage helpers ────────────────────────────────────────────────────────────
@@ -150,3 +154,100 @@ def check_alerts() -> list:
         })
 
     return alerts
+
+
+# ── Code implementation (Claude Code capability) ───────────────────────────────
+
+def code_task(task: str, files: list | None = None) -> str:
+    """
+    Kanaan uses Claude Sonnet to implement a coding task within the Johnny codebase.
+
+    Workflow:
+      1. Reads the relevant files (scoped to JOHNNY_ROOT only)
+      2. Generates a full implementation plan + code
+      3. Returns the proposed changes — does NOT commit automatically
+      4. User must approve before anything is applied
+
+    Args:
+        task:  What to build or fix (plain English)
+        files: Optional list of specific files to focus on (relative to Johnny root)
+    """
+    import anthropic
+
+    # Build context from requested files (safety: only within JOHNNY_ROOT)
+    file_context = ""
+    if files:
+        for rel_path in files[:6]:  # cap at 6 files to keep context manageable
+            abs_path = os.path.realpath(os.path.join(JOHNNY_ROOT, rel_path))
+            if not abs_path.startswith(os.path.realpath(JOHNNY_ROOT)):
+                continue  # path traversal guard
+            if os.path.isfile(abs_path):
+                try:
+                    with open(abs_path, "r", encoding="utf-8") as f:
+                        content = f.read(8000)  # cap per-file at 8K chars
+                    file_context += f"\n\n━━━ {rel_path} ━━━\n{content}"
+                except Exception:
+                    pass
+
+    prompt = (
+        "You are Kanaan, Chief of Technology & Development for the Johnny AI system.\n"
+        "Johnny is a personal AI chief-of-staff built in Python, running on a Mac Mini.\n"
+        "Stack: Claude API (Opus/Sonnet/Haiku), Gemini API, Ollama/LLaMA, Telegram bot.\n\n"
+        f"TASK:\n{task}\n"
+        + (f"\nRELEVANT FILES:{file_context}" if file_context else "") +
+        "\n\nProvide:\n"
+        "1. Brief implementation plan (3-5 bullet points)\n"
+        "2. Complete, working code for each file that needs to change\n"
+        "3. Any new files to create (full content)\n"
+        "4. Required pip installs (if any)\n"
+        "5. One-line summary of what to test after applying\n\n"
+        "Format each file as:\n"
+        "FILE: <path>\n```python\n<full file content>\n```\n\n"
+        "Be precise. No placeholders. Production-ready code only.\n\n— Kanaan"
+    )
+
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        result = response.content[0].text
+
+        # Log as a pending tech task so it shows up in dev status
+        log_tech_task(f"[code_task] {task[:60]}", priority="high",
+                      notes="Pending user review and approval before applying.")
+
+        return (
+            f"━━━ KANAAN'S CODE PROPOSAL ━━━\n\n"
+            f"{result}\n\n"
+            f"━━━ REVIEW BEFORE APPLYING ━━━\n"
+            f"• Changes above are PROPOSED only — not yet written to disk\n"
+            f"• Tell Johnny 'apply Kanaan's changes' to implement\n"
+            f"• Or 'reject Kanaan's proposal' to discard\n\n"
+            f"— Kanaan"
+        )
+    except Exception as e:
+        return f"Kanaan code task failed: {e}\n\n— Kanaan"
+
+
+def apply_code_proposal(file_path: str, content: str) -> str:
+    """
+    Apply a specific file change from Kanaan's proposal.
+    Only writes files within JOHNNY_ROOT. User must call this explicitly.
+    """
+    abs_path = os.path.realpath(os.path.join(JOHNNY_ROOT, file_path))
+    if not abs_path.startswith(os.path.realpath(JOHNNY_ROOT)):
+        return f"Kanaan blocked: {file_path} is outside the Johnny directory.\n\n— Kanaan"
+
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    log_tech_decision(
+        f"Applied code change: {file_path}",
+        rationale="User approved Kanaan's code proposal.",
+        status="decided",
+    )
+    return f"Kanaan applied changes to {file_path}. Review with git diff before committing.\n\n— Kanaan"

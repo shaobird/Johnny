@@ -62,6 +62,8 @@ def log_expense(
     currency: str = "SGD",
 ) -> str:
     """Log an expense. Category: materials/labour/overhead/equipment/other."""
+    if amount <= 0:
+        return f"Lorrie rejected expense: amount must be positive (got {amount}).\n\n— Lorrie"
     log = _load_log()
     log.append({
         "type": "expense",
@@ -88,6 +90,8 @@ def log_invoice(
     currency: str = "SGD",
 ) -> str:
     """Log an invoice issued. Status: pending/paid/overdue."""
+    if amount <= 0:
+        return f"Lorrie rejected expense: amount must be positive (got {amount}).\n\n— Lorrie"
     log = _load_log()
     log.append({
         "type": "invoice",

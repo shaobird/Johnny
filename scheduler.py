@@ -8,12 +8,13 @@ Jobs:
   4. Memory maintenance (02:00 nightly)      — dedupe + sort notes, no API cost
   5. Weekly retro       (Sunday 08:00)       — one-week pattern summary via Claude
   6. Gmail monitor      (every 30 min)       — new relevant emails, instant push
+  7. Daily agent idea   (AGENT_IDEA_TIME)    — Smarty + Kanaan propose one new AI agent
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import Application
 
-from config import BRIEFING_TIME, INTEL_BRIEFING_TIME
+from config import BRIEFING_TIME, INTEL_BRIEFING_TIME, AGENT_IDEA_TIME
 
 
 def setup(app: Application) -> AsyncIOScheduler:
@@ -28,6 +29,7 @@ def setup(app: Application) -> AsyncIOScheduler:
         push_maintenance_report,
         push_weekly_retro,
         push_email_alerts,
+        push_agent_idea,
     )
 
     scheduler = AsyncIOScheduler()
@@ -103,6 +105,19 @@ def setup(app: Application) -> AsyncIOScheduler:
         id="gmail_monitor",
         replace_existing=True,
         misfire_grace_time=300,
+    )
+
+    # ── Job 7: Daily AI agent idea — Smarty researches, Kanaan evaluates ──────
+    a_hour, a_min = AGENT_IDEA_TIME.split(":")
+    scheduler.add_job(
+        push_agent_idea,
+        trigger="cron",
+        hour=int(a_hour),
+        minute=int(a_min),
+        args=[app],
+        id="daily_agent_idea",
+        replace_existing=True,
+        misfire_grace_time=600,
     )
 
     return scheduler
