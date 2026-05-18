@@ -157,7 +157,8 @@ Each agent is a mini-coordinator — they pull from their own sub-sources before
 • Peter   — Chief of Investment: forex positioning, capital allocation, investment thesis.
             Peter pulls Smarty's live news before giving any trade advice — never advises blind.
 • Kanaan  — Chief of Tech & Dev: software architecture, AI/automation, Johnny's dev roadmap,
-            build vs buy decisions. Kanaan checks Mo for stored specs before advising.
+            build vs buy decisions. Can write code via kanaan_code_task — proposes changes,
+            user approves, then apply_code_proposal writes the file. Never auto-commits.
 
 CROSS-AGENT COLLABORATION:
 Use consult_team when a question spans domains. Use get_dashboard when the user wants
@@ -782,6 +783,44 @@ _TOOLS = [
         ),
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
+    # ── Kanaan code capability ────────────────────────────────────────────────
+    {
+        "name": "kanaan_code_task",
+        "description": (
+            "Kanaan uses Claude Sonnet to implement a coding task within the Johnny codebase. "
+            "He reads the relevant files, writes a complete implementation, and returns a proposal. "
+            "IMPORTANT: changes are proposed only — not written to disk until user approves. "
+            "Use when user asks Kanaan to build, fix, or modify something in Johnny."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task":  {"type": "string", "description": "What to build or fix, in plain English."},
+                "files": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Relevant file paths relative to Johnny root (e.g. ['agents/fitness.py']).",
+                },
+            },
+            "required": ["task"],
+        },
+    },
+    {
+        "name": "apply_code_proposal",
+        "description": (
+            "Apply a specific file change from Kanaan's code proposal. "
+            "Only call this AFTER the user has reviewed and approved Kanaan's output. "
+            "Writes the file to disk. Does NOT commit — user runs git commands separately."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string", "description": "Relative path of the file to write."},
+                "content":   {"type": "string", "description": "Full file content to write."},
+            },
+            "required": ["file_path", "content"],
+        },
+    },
     # ── Agent ideas (Smarty + Kanaan) ─────────────────────────────────────────
     {
         "name": "generate_agent_idea",
@@ -870,6 +909,8 @@ _HANDLERS = {
     "log_tech_task":             lambda inp: log_tech_task(inp["task"], inp.get("priority", "medium"), inp.get("notes", "")),
     "complete_tech_task":        lambda inp: complete_tech_task(inp["task"]),
     "get_dev_status":            lambda _:   get_dev_status(),
+    "kanaan_code_task":          lambda inp: kanaan_code_task(inp["task"], inp.get("files", [])),
+    "apply_code_proposal":       lambda inp: apply_code_proposal(inp["file_path"], inp["content"]),
     # Agent ideas
     "generate_agent_idea":  lambda _:   generate_daily_idea(),
     "get_past_agent_ideas": lambda inp: get_past_ideas(inp.get("limit", 7)),
