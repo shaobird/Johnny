@@ -37,6 +37,11 @@ from agents.kanaan import (
     log_tech_decision, log_tech_task, complete_task as complete_tech_task, get_dev_status,
 )
 from agents.dashboard import get_full_dashboard
+from agents.mnemon import (
+    log_pattern, log_decision, update_decision_outcome,
+    log_insight, get_context as mnemon_get_context,
+    get_all_patterns, get_decisions,
+)
 import memory as mem
 from config import ANTHROPIC_API_KEY, GEMINI_API_KEY
 
@@ -74,6 +79,16 @@ def _needs_anthropic(message: str) -> bool:
 
 def _build_system_prompt() -> str:
     user_context = mem.get_context()
+
+    # Pull Mnemon's top learnings into every system prompt — free, no API call
+    mnemon_section = ""
+    try:
+        learned = mnemon_get_context()  # no topic filter = top patterns across all domains
+        if learned:
+            mnemon_section = f"\n\n━━━ WHAT MNEMON HAS LEARNED ━━━\n{learned}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    except Exception:
+        pass
+
     return f"""\
 You are Johnny Zhang — Zhang Zhi Yi — personal AI chief of staff and trusted senior advisor. \
 Your English name is Johnny. Your Chinese name is Zhang Zhi Yi (张智义). \
@@ -96,7 +111,7 @@ You address the user as "Boss" unless their name is in the profile below.
 ━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ WHAT YOU KNOW ABOUT THE USER ━━━
-{user_context}
+{user_context}{mnemon_section}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ━━━ YOUR SPECIALIST AGENTS ━━━
@@ -108,7 +123,12 @@ Each agent is a mini-coordinator — they pull from their own sub-sources before
             Sally drafts — you QC. When drafting a newsletter: call draft_newsletter, review Sally's
             copy, make direct improvements (don't just comment), return the polished final draft +
             3 QC notes at the bottom explaining what you changed and why. User pastes it into Manus AI.
-• Mo      — Chief Warehouse Manager: file storage + retrieval, feeds context to all other agents
+• Mo      — Chief Warehouse Manager: file storage + retrieval, feeds context to all other agents.
+            Sub-agent: Mnemon — every Mo context call also returns Mnemon's learnings on that topic.
+• Mnemon  — Memory & Learning (lives under Mo): patterns, decisions + outcomes, insights.
+            Use log_pattern when you notice a behavioural regularity.
+            Use log_decision when a significant choice is made — update outcome when known.
+            Use log_insight for one-line truths worth keeping forever.
 • Lorrie  — Chief of Finance: day-to-day money — expenses, invoices, budgets, cash flow, job costing.
             Lorrie consults Mo automatically for stored budget/contract docs.
 • Peter   — Chief of Investment: forex positioning, capital allocation, investment thesis.
@@ -448,6 +468,91 @@ _TOOLS = [
             "required": ["filename"],
         },
     },
+    # ── Mnemon tools (memory & learning — sub-agent under Mo) ─────────────────
+    {
+        "name": "log_pattern",
+        "description": (
+            "Mnemon records a behavioural pattern you've observed — something the user "
+            "does repeatedly. Each repeat reinforces confidence. "
+            "Use whenever you notice a regularity across sessions."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "fitness/finance/trading/construction/work/general"},
+                "pattern":  {"type": "string", "description": "The pattern observed, stated plainly."},
+            },
+            "required": ["category", "pattern"],
+        },
+    },
+    {
+        "name": "log_decision",
+        "description": (
+            "Mnemon logs a significant decision and its outcome. "
+            "Log when a notable choice is made. Update the outcome later with update_decision_outcome."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "domain":   {"type": "string", "description": "construction/finance/trading/tech/personal/general"},
+                "decision": {"type": "string", "description": "What was decided."},
+                "outcome":  {"type": "string", "description": "positive/negative/neutral/pending (default pending)"},
+                "lesson":   {"type": "string", "description": "What we learned from this outcome."},
+            },
+            "required": ["domain", "decision"],
+        },
+    },
+    {
+        "name": "update_decision_outcome",
+        "description": "Update the outcome of a previously logged decision once results are known.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "decision_fragment": {"type": "string", "description": "Partial text of the original decision."},
+                "outcome":           {"type": "string", "description": "positive/negative/neutral"},
+                "lesson":            {"type": "string", "description": "What we learned."},
+            },
+            "required": ["decision_fragment", "outcome"],
+        },
+    },
+    {
+        "name": "log_insight",
+        "description": (
+            "Mnemon saves a one-line truth about the business, user, or market that's worth keeping forever. "
+            "Use for things like 'Q1 cash flow is always tight' or 'supplier X is 10% cheaper consistently'."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category":  {"type": "string", "description": "finance/construction/trading/fitness/general"},
+                "insight":   {"type": "string", "description": "The insight, stated as a clear one-liner."},
+                "relevance": {"type": "string", "description": "high/medium/low"},
+            },
+            "required": ["category", "insight"],
+        },
+    },
+    {
+        "name": "get_patterns",
+        "description": "Return all patterns Mnemon has logged, optionally filtered by category.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "Optional category filter."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "get_decision_log",
+        "description": "Return past decisions and their outcomes from Mnemon.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "domain": {"type": "string", "description": "Optional domain filter."},
+            },
+            "required": [],
+        },
+    },
     # ── Lorrie tools (Chief of Finance — day-to-day money tracking) ──────────
     {
         "name": "log_expense",
@@ -700,6 +805,13 @@ _HANDLERS = {
     "mo_search":                 lambda inp: mo_search(inp["query"], inp.get("category", "")),
     "mo_list":                   lambda inp: mo_list(inp.get("category", "")),
     "mo_get_file":               lambda inp: mo_get(inp["filename"]),
+    # Mnemon — memory & learning
+    "log_pattern":               lambda inp: log_pattern(inp["category"], inp["pattern"]),
+    "log_decision":              lambda inp: log_decision(inp["domain"], inp["decision"], inp.get("outcome", "pending"), inp.get("lesson", "")),
+    "update_decision_outcome":   lambda inp: update_decision_outcome(inp["decision_fragment"], inp["outcome"], inp.get("lesson", "")),
+    "log_insight":               lambda inp: log_insight(inp["category"], inp["insight"], inp.get("relevance", "medium")),
+    "get_patterns":              lambda inp: get_all_patterns(inp.get("category", "")),
+    "get_decision_log":          lambda inp: get_decisions(inp.get("domain", "")),
     # Lorrie — finance operations
     "log_expense":               lambda inp: log_expense(inp["amount"], inp["category"], inp["description"], inp.get("job", ""), inp.get("currency", "SGD")),
     "log_invoice":               lambda inp: log_invoice(inp["amount"], inp["client"], inp["description"], inp.get("job", ""), inp.get("status", "pending"), inp.get("currency", "SGD")),

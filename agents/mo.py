@@ -5,6 +5,9 @@ Mo is the central storage and retrieval agent for all files.
 He ingests documents, auto-summarises them, indexes them by category and tags,
 and provides context to Johnny, Val, and other agents on demand.
 
+Sub-agent: Mnemon — every context call also pulls Mnemon's patterns,
+decisions, and insights on the same topic.
+
 Storage layout:
   storage/
     index.json          — master manifest
@@ -13,8 +16,7 @@ Storage layout:
     newsletters/        — past newsletters
     research/           — supplier info, market data
     personal/           — misc
-
-Mo is referenced by other agents via get_context() or search().
+    memory/             — Mnemon's structured learnings
 """
 
 import json
@@ -173,6 +175,16 @@ def get_context(topic: str, max_files: int = 3) -> str:
             f"\n━━━ {e['filename']} [{e['category']}] ({e['stored_at'][:10]}) ━━━\n"
             f"{e['summary']}"
         )
+
+    # Sub-agent: Mnemon — append learned patterns/decisions on same topic
+    try:
+        from agents.mnemon import get_context as mnemon_context
+        mnemon_data = mnemon_context(topic)
+        if mnemon_data:
+            lines.append(f"\n{mnemon_data}")
+    except Exception:
+        pass
+
     return "\n".join(lines)
 
 
