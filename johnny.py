@@ -39,6 +39,12 @@ from agents.kanaan import (
 )
 from agents.dashboard import get_full_dashboard
 from agents.agent_ideas import generate_daily_idea, get_past_ideas
+from agents.ai_sessions import (
+    capture_session as capture_ai_session_fn,
+    search_sessions as search_ai_sessions_fn,
+    get_recent_sessions as get_recent_ai_sessions_fn,
+    get_session_stats as ai_session_stats_fn,
+)
 from agents.mnemon import (
     log_pattern, log_decision, update_decision_outcome,
     log_insight, get_context as mnemon_get_context,
@@ -159,6 +165,12 @@ Each agent is a mini-coordinator — they pull from their own sub-sources before
 • Kanaan  — Chief of Tech & Dev: software architecture, AI/automation, Johnny's dev roadmap,
             build vs buy decisions. Can write code via kanaan_code_task — proposes changes,
             user approves, then apply_code_proposal writes the file. Never auto-commits.
+• Mo MCP  — Centralised AI Session Store: Mo also manages a unified memory of everything
+            researched across ALL AI tools (Claude, Gemini, ChatGPT, Perplexity, Manus).
+            capture_ai_session: save any AI Q&A so it's searchable later.
+            search_ai_sessions: search what was previously researched across all AI tools.
+            get_recent_ai_sessions: review recent research sessions by source.
+            This means research done in Gemini is findable when asking Claude, and vice versa.
 
 CROSS-AGENT COLLABORATION:
 Use consult_team when a question spans domains. Use get_dashboard when the user wants
@@ -836,6 +848,55 @@ _TOOLS = [
             "required": [],
         },
     },
+    # ── AI Session Store (Mo's MCP layer) ─────────────────────────────────────
+    {
+        "name": "capture_ai_session",
+        "description": (
+            "Save a Q&A exchange from any AI (Claude, Gemini, ChatGPT, Perplexity, etc.) to Mo's unified memory. "
+            "Use at end of research conversations so findings are searchable later. "
+            "source_ai: claude | gemini | chatgpt | perplexity | grok | manus | other"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query":     {"type": "string", "description": "The question or search that was asked."},
+                "response":  {"type": "string", "description": "The AI's response or research result."},
+                "source_ai": {"type": "string", "description": "Which AI produced this (claude/gemini/chatgpt/etc)."},
+                "tags":      {"type": "array",  "items": {"type": "string"}, "description": "Optional keywords."},
+                "topic":     {"type": "string", "description": "Topic override (blank = auto-detect)."},
+            },
+            "required": ["query", "response"],
+        },
+    },
+    {
+        "name": "search_ai_sessions",
+        "description": "Search past AI sessions (from Claude, Gemini, ChatGPT, etc.) by keyword. Optionally filter by source AI.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query":     {"type": "string", "description": "Keyword to search for."},
+                "source_ai": {"type": "string", "description": "Filter to one AI source (optional)."},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "get_recent_ai_sessions",
+        "description": "Get the most recent AI sessions. Optionally filter by source AI (claude/gemini/chatgpt/etc).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit":     {"type": "integer", "description": "Number of sessions to return (default 10)."},
+                "source_ai": {"type": "string",  "description": "Filter by AI source (optional)."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "ai_session_stats",
+        "description": "Show how many AI sessions are stored per source (Claude, Gemini, ChatGPT, etc.).",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
     # ── Cross-agent collaboration ──────────────────────────────────────────────
     {
         "name": "consult_team",
@@ -914,6 +975,11 @@ _HANDLERS = {
     # Agent ideas
     "generate_agent_idea":  lambda _:   generate_daily_idea(),
     "get_past_agent_ideas": lambda inp: get_past_ideas(inp.get("limit", 7)),
+    # AI Session Store (Mo's MCP layer)
+    "capture_ai_session":    lambda inp: capture_ai_session_fn(inp["query"], inp["response"], inp.get("source_ai", "claude"), inp.get("tags", []), inp.get("topic", "")),
+    "search_ai_sessions":    lambda inp: search_ai_sessions_fn(inp["query"], inp.get("source_ai", "")),
+    "get_recent_ai_sessions": lambda inp: get_recent_ai_sessions_fn(inp.get("limit", 10), inp.get("source_ai", "")),
+    "ai_session_stats":      lambda _:   ai_session_stats_fn(),
     # Cross-agent
     "consult_team":              lambda inp: _consult_team(inp["topic"], inp["agents"]),
     "get_dashboard":             lambda _:   get_full_dashboard(),

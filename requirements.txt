@@ -18,3 +18,7 @@ apscheduler>=3.10
 
 # Browser automation — required for MrktEdge login + scraping
 playwright>=1.40
+
+# MCP server — centralised Mo knowledge store
+mcp>=1.9
+
