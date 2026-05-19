@@ -45,6 +45,11 @@ from agents.ai_sessions import (
     get_recent_sessions as get_recent_ai_sessions_fn,
     get_session_stats as ai_session_stats_fn,
 )
+from agents.thoughts import (
+    capture_thought as capture_thought_fn,
+    list_recent_thoughts as list_recent_thoughts_fn,
+    thought_stats as thought_stats_fn,
+)
 from agents.mnemon import (
     log_pattern, log_decision, update_decision_outcome,
     log_insight, get_context as mnemon_get_context,
@@ -848,6 +853,44 @@ _TOOLS = [
             "required": [],
         },
     },
+    # ── Open Brain thoughts (Memory Migration / Spark / Weekly Review) ───────
+    {
+        "name": "capture_thought",
+        "description": (
+            "Save a single self-contained thought to the Open Brain. "
+            "Use when the user shares context, decisions, people, preferences, or topics "
+            "worth remembering across all AI tools. Smart-routes preferences → Mnemon patterns, "
+            "decisions → Mnemon decisions. "
+            "Category: people | projects | preferences | decisions | topics | professional | personal | general"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "thought":   {"type": "string", "description": "Self-contained statement that makes sense to any AI later."},
+                "category":  {"type": "string", "description": "One of: people, projects, preferences, decisions, topics, professional, personal, general."},
+                "tags":      {"type": "array", "items": {"type": "string"}, "description": "Optional keywords for future search."},
+                "source_ai": {"type": "string", "description": "Which AI captured this (default claude)."},
+            },
+            "required": ["thought"],
+        },
+    },
+    {
+        "name": "list_recent_thoughts",
+        "description": "Return the most recent thoughts from the Open Brain. Optionally filter by category.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit":    {"type": "integer", "description": "How many to return (default 10)."},
+                "category": {"type": "string",  "description": "Optional category filter."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "thought_stats",
+        "description": "Summary of Open Brain captures: total, by category, by source AI, last 7 days.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
     # ── AI Session Store (Mo's MCP layer) ─────────────────────────────────────
     {
         "name": "capture_ai_session",
@@ -975,6 +1018,10 @@ _HANDLERS = {
     # Agent ideas
     "generate_agent_idea":  lambda _:   generate_daily_idea(),
     "get_past_agent_ideas": lambda inp: get_past_ideas(inp.get("limit", 7)),
+    # Open Brain thoughts
+    "capture_thought":       lambda inp: capture_thought_fn(inp["thought"], inp.get("category", "general"), inp.get("tags", []), inp.get("source_ai", "claude")),
+    "list_recent_thoughts":  lambda inp: list_recent_thoughts_fn(inp.get("limit", 10), inp.get("category", "")),
+    "thought_stats":         lambda _:   thought_stats_fn(),
     # AI Session Store (Mo's MCP layer)
     "capture_ai_session":    lambda inp: capture_ai_session_fn(inp["query"], inp["response"], inp.get("source_ai", "claude"), inp.get("tags", []), inp.get("topic", "")),
     "search_ai_sessions":    lambda inp: search_ai_sessions_fn(inp["query"], inp.get("source_ai", "")),

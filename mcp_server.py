@@ -73,6 +73,12 @@ from agents.ai_sessions import (
     get_recent_sessions,
     get_session_stats,
 )
+from agents.thoughts import (
+    capture_thought as capture_thought_fn,
+    search_thoughts,
+    list_recent_thoughts as list_recent_thoughts_fn,
+    thought_stats as thought_stats_fn,
+)
 
 mcp = FastMCP(
     "Johnny-Mo",
@@ -125,12 +131,18 @@ def search_knowledge(query: str, category: str = "") -> str:
 
     Optionally filter by category: construction | finance | research | personal
     """
-    mo_results      = search(query, category)
-    session_results = search_sessions(query)
+    mo_results       = search(query, category)
+    session_results  = search_sessions(query)
+    thought_results  = search_thoughts(query, category if category in {
+        "people", "projects", "preferences", "decisions",
+        "topics", "professional", "personal", "general"
+    } else "")
 
     parts = []
     if "nothing matching" not in mo_results.lower() and "warehouse is empty" not in mo_results.lower():
         parts.append(mo_results)
+    if "no thoughts" not in thought_results.lower():
+        parts.append(f"\n── Open Brain Thoughts ──\n{thought_results}")
     if "no ai sessions" not in session_results.lower() and "no sessions" not in session_results.lower():
         parts.append(f"\n── AI Session History ──\n{session_results}")
 
@@ -166,6 +178,54 @@ def get_document(filename: str) -> str:
     Use list_documents first to find the correct filename.
     """
     return get_file_content(filename)
+
+
+# ── Open Brain: capture_thought (Memory Migration / Spark / Weekly Review) ───
+
+@mcp.tool()
+def capture_thought(
+    thought: str,
+    category: str = "general",
+    tags: list[str] | None = None,
+    source_ai: str = "claude",
+) -> str:
+    """
+    Save a single self-contained thought to the Open Brain.
+
+    category: people | projects | preferences | decisions | topics |
+              professional | personal | general
+
+    Each thought should be a standalone statement that makes sense
+    when retrieved later by a different AI with zero prior context.
+
+    Smart routing:
+    • preferences → also logged as a Mnemon pattern
+    • decisions   → also logged as a Mnemon decision
+    """
+    return capture_thought_fn(
+        thought=thought,
+        category=category,
+        tags=tags or [],
+        source_ai=source_ai,
+    )
+
+
+@mcp.tool()
+def list_recent_thoughts(limit: int = 10, category: str = "") -> str:
+    """
+    Return the most recent thoughts captured to the Open Brain.
+    limit:    number of thoughts to return (default 10)
+    category: filter by category (optional)
+    """
+    return list_recent_thoughts_fn(limit, category)
+
+
+@mcp.tool()
+def thought_stats() -> str:
+    """
+    Summary of captured thoughts: total, per-category, recent activity, source AIs.
+    """
+    return thought_stats_fn()
 
 
 # ── AI Session Capture ─────────────────────────────────────────────────────────
@@ -300,6 +360,18 @@ def recent_sessions_resource() -> str:
 def session_stats_resource() -> str:
     """Live view: AI session counts by source."""
     return get_session_stats()
+
+
+@mcp.resource("thoughts://recent")
+def recent_thoughts_resource() -> str:
+    """Live view: last 20 Open Brain thoughts across all categories."""
+    return list_recent_thoughts_fn(20)
+
+
+@mcp.resource("thoughts://stats")
+def thought_stats_resource() -> str:
+    """Live view: Open Brain stats by category and source AI."""
+    return thought_stats_fn()
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
