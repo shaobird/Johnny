@@ -22,3 +22,6 @@ playwright>=1.40
 # MCP server — centralised Mo knowledge store
 mcp>=1.9
 
+# Local semantic embeddings — Open Brain semantic_search tool (no API key needed)
+sentence-transformers>=3.0
+

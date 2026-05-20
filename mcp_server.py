@@ -78,6 +78,7 @@ from agents.thoughts import (
     search_thoughts,
     list_recent_thoughts as list_recent_thoughts_fn,
     thought_stats as thought_stats_fn,
+    semantic_search_thoughts as semantic_search_thoughts_fn,
 )
 
 mcp = FastMCP(
@@ -226,6 +227,30 @@ def thought_stats() -> str:
     Summary of captured thoughts: total, per-category, recent activity, source AIs.
     """
     return thought_stats_fn()
+
+
+@mcp.tool()
+def semantic_search(
+    query: str,
+    top_k: int = 5,
+    category: str = "",
+) -> str:
+    """
+    Meaning-based search across the Open Brain — finds conceptually similar
+    thoughts even when exact keywords don't match.
+
+    Examples:
+      • "cash reserves" → finds thoughts about "business extraction", "rainy day fund"
+      • "workout felt heavy" → finds thoughts about "fatigue", "overtraining signs"
+
+    top_k:    number of results to return (default 5, max 20)
+    category: optional filter — people | projects | preferences | decisions |
+              topics | professional | personal | general
+
+    Falls back to keyword search if the local model hasn't been downloaded yet.
+    """
+    top_k = min(max(1, top_k), 20)
+    return semantic_search_thoughts_fn(query, top_k=top_k, category=category)
 
 
 # ── AI Session Capture ─────────────────────────────────────────────────────────

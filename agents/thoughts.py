@@ -77,6 +77,13 @@ def capture_thought(
     thoughts.append(entry)
     _save(thoughts)
 
+    # Embed for semantic search (non-blocking — failure doesn't break capture)
+    try:
+        from agents.embeddings import embed_and_store
+        embed_and_store(entry["id"], thought.strip())
+    except Exception:
+        pass
+
     # Smart routing: preferences and decisions also flow into Mnemon
     side_effect = ""
     try:
@@ -193,6 +200,37 @@ def thought_stats() -> str:
     for src, count in sorted(by_src.items(), key=lambda x: x[1], reverse=True):
         lines.append(f"  {src:<14} {count:>4}")
 
+    return "\n".join(lines)
+
+
+def semantic_search_thoughts(query: str, top_k: int = 5, category: str = "") -> str:
+    """
+    Semantic (meaning-based) search across all thoughts.
+    Returns top-k results by cosine similarity.
+    Falls back to keyword search if embeddings not available.
+    """
+    try:
+        from agents.embeddings import semantic_search_thoughts as _sem_search
+        results = _sem_search(query, top_k=top_k, category=category)
+    except Exception:
+        results = []
+
+    if not results:
+        return search_thoughts(query, category)  # graceful keyword fallback
+
+    thoughts = _load()
+    by_id = {t["id"]: t for t in thoughts}
+
+    lines = [f"Semantic search — top {len(results)} matches for \"{query}\":"]
+    for r in results:
+        t = by_id.get(r["id"])
+        if not t:
+            continue
+        tag_str = f" [{', '.join(t['tags'])}]" if t.get("tags") else ""
+        lines.append(
+            f"  [{r['score']:.2f}] [{t['date']}] [{t['category']}]{tag_str}\n"
+            f"    {t['thought'][:180]}"
+        )
     return "\n".join(lines)
 
 
