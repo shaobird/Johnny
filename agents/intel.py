@@ -101,11 +101,10 @@ def _claude_search() -> str:
     messages = [{"role": "user", "content": _PROMPT}]
     response = None
 
-    for _ in range(25):
+    for _ in range(10):  # 10 turns is enough; 25 was burning Opus budget
         response = client.messages.create(
-            model="claude-opus-4-7",
+            model="claude-sonnet-4-6",  # Sonnet: 5x cheaper than Opus, same quality for search
             max_tokens=8096,
-            thinking={"type": "adaptive"},
             tools=_SEARCH_TOOLS,
             messages=messages,
         )
