@@ -1220,7 +1220,7 @@ def _run_loop(messages: list[dict], use_opus: bool = False) -> str:
     Run the tool-use loop until Johnny reaches end_turn.
     Opus is used for briefings; Sonnet for freeform chat (80% cheaper).
     """
-    model = "claude-opus-4-6" if use_opus else "claude-sonnet-4-6"
+    model = "claude-opus-4-7" if use_opus else "claude-sonnet-4-6"
     response: anthropic.types.Message | None = None
 
     for _ in range(MAX_ITERATIONS):

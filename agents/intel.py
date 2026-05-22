@@ -103,7 +103,7 @@ def _claude_search() -> str:
 
     for _ in range(25):
         response = client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-opus-4-7",
             max_tokens=8096,
             thinking={"type": "adaptive"},
             tools=_SEARCH_TOOLS,
