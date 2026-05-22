@@ -484,7 +484,7 @@ _TOOLS = [
         "description": (
             "Generate a full research brief for the next newsletter. "
             "Pulls live intel briefing, recent topics covered, and top performers. "
-            "Takes 1-2 minutes (runs Gemini search). Use when planning a new newsletter."
+            "Takes 1-2 minutes (runs Claude web search). Use when planning a new newsletter."
         ),
         "input_schema": {
             "type": "object",

@@ -321,18 +321,6 @@ async def push_intel(app: Application) -> None:
     await _push(app, text)
 
 
-async def push_agent_idea(app: Application) -> None:
-    """Called daily at AGENT_IDEA_TIME — Smarty + Kanaan propose one new AI agent idea."""
-    if not TELEGRAM_CHAT_ID:
-        return
-    try:
-        from agents.agent_ideas import generate_daily_idea
-        text = await asyncio.to_thread(generate_daily_idea)
-        await _push(app, text)
-    except Exception as e:
-        print(f"[AgentIdea] Daily idea failed: {e}")
-
-
 async def push_email_alerts(app: Application) -> None:
     """Called every 30 min — pushes new relevant emails instantly."""
     if not TELEGRAM_CHAT_ID:
@@ -411,6 +399,26 @@ async def push_agent_idea(app: Application) -> None:
         await _push(app, idea)
     except Exception as e:
         print(f"[AgentIdea] Push failed: {e}")
+
+
+async def push_newsletter_reminder(app: Application) -> None:
+    """Thursday 09:00 — nudge if no newsletter has been sent in 14+ days."""
+    if not TELEGRAM_CHAT_ID:
+        return
+    try:
+        from agents.newsletter import check_alerts
+        alerts = await asyncio.to_thread(check_alerts)
+        if not alerts:
+            return  # All good — no reminder needed
+        for alert in alerts:
+            emoji = "🔴" if alert["priority"] == "medium" else "🟡"
+            await _push(
+                app,
+                f"{emoji} *Sally — Newsletter Alert*\n\n{alert['message']}\n\n"
+                "Reply 'draft newsletter' to get Sally started.",
+            )
+    except Exception as e:
+        print(f"[Sally] Newsletter reminder failed: {e}")
 
 
 async def _push(app: Application, text: str) -> None:

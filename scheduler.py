@@ -9,6 +9,7 @@ Jobs:
   5. Weekly retro       (Sunday 08:00)       — one-week pattern summary via Claude
   6. Gmail monitor      (every 30 min)       — new relevant emails, instant push
   7. Daily agent idea   (AGENT_IDEA_TIME)    — Smarty + Kanaan propose one new AI agent
+  8. Newsletter reminder (Thursday 09:00)    — Sally nudges if newsletter overdue 14+ days
 """
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -30,6 +31,7 @@ def setup(app: Application) -> AsyncIOScheduler:
         push_weekly_retro,
         push_email_alerts,
         push_agent_idea,
+        push_newsletter_reminder,
     )
 
     scheduler = AsyncIOScheduler()
@@ -118,6 +120,19 @@ def setup(app: Application) -> AsyncIOScheduler:
         id="daily_agent_idea",
         replace_existing=True,
         misfire_grace_time=600,
+    )
+
+    # ── Job 8: Newsletter reminder (Thursday 09:00) — only fires when overdue ──
+    scheduler.add_job(
+        push_newsletter_reminder,
+        trigger="cron",
+        day_of_week="thu",
+        hour=9,
+        minute=0,
+        args=[app],
+        id="newsletter_reminder",
+        replace_existing=True,
+        misfire_grace_time=3600,
     )
 
     return scheduler
