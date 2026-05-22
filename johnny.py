@@ -1115,9 +1115,10 @@ def chat(message: str, history: list[dict] | None = None, use_opus: bool = False
     try:
         return _chat_llama(message, history or [])
     except Exception as e:
-        print(f"[Chat] LLaMA unavailable ({e}), falling back to Gemini...")
+        fallback_target = "Gemini" if GEMINI_API_KEY else "Claude Sonnet"
+        print(f"[Chat] LLaMA unavailable ({e}), falling back to {fallback_target}...")
 
-    # Fallback: Gemini
+    # Fallback: Gemini (only if configured)
     if GEMINI_API_KEY:
         try:
             return _chat_gemini(message, history or [])
