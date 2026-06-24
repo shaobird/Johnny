@@ -33,7 +33,6 @@ from agents.calendar import get_todays_events
 from agents.fitness import get_fitness_summary
 from agents.news import get_high_impact_news
 from agents.intel import get_intel_briefing
-from agents.mrktedge import check_new_items, format_item
 from agents.gmail import get_new_emails, format_email
 from agents.files import parse_file
 from agents.mo import store_file as mo_store
@@ -370,22 +369,6 @@ async def push_weekly_retro(app: Application) -> None:
         await _push(app, f"📊 *Weekly Retro*\n\n{retro}")
     except Exception as e:
         print(f"[Retro] Weekly retro failed: {e}")
-
-
-async def push_mrktedge_alerts(app: Application) -> None:
-    """Called every 10 min — pushes any new HIGH IMPACT items instantly."""
-    if not TELEGRAM_CHAT_ID:
-        return
-    try:
-        new_items = await asyncio.to_thread(check_new_items)
-        for item in new_items:
-            await app.bot.send_message(
-                chat_id=int(TELEGRAM_CHAT_ID),
-                text=format_item(item),
-                parse_mode="Markdown",
-            )
-    except Exception as e:
-        print(f"[MrktEdge] Push failed: {e}")
 
 
 async def push_agent_idea(app: Application) -> None:
